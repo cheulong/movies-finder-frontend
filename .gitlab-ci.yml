@@ -93,7 +93,7 @@ trivy_scan_nodejs:
   stage: security
   image: aquasec/trivy:latest
   script:
-    - trivy fs --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed .
+    - trivy fs --format table -o fs.html --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed .
   allow_failure: false
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
