@@ -6,13 +6,25 @@
 # https://docs.gitlab.com/development/cicd/templates/
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Nodejs.gitlab-ci.yml
+
+# stages:
+#     - build
+#     - test
+#     - package
+#     - deploy_dev
+#     - deploy_staging
+#     - deploy_prod
+
 stages:
+    - prepare
     - build
     - test
+    - security
+    - quality
     - package
-    - deploy_dev
-    - deploy_staging
-    - deploy_prod
+    - deploy
+    - notify
+
 # Official framework image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/node/tags/
 image: node:latest
@@ -31,68 +43,173 @@ cache:
     paths:
         - node_modules/
 
-build:
-    stage: build
-    script:
-        - echo 'build'
+variables:
+    NODE_ENV: production
+    DOCKER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH/app:$CI_COMMIT_SHORT_SHA
 
-unit_test:
-    stage: test
+# ---- PREPARE ----
+install_dependencies:
+    stage: prepare
     script:
-        - echo 'test'
-
-sonarqube:
-    stage: test
-    script:
-        - echo 'sonarqube'
-    needs:
-        - job: unit_test
-
-owap:
-    stage: test
-    script:
-        - echo 'owap zap'
-    needs:
-        - job: sonarqube
-
-build_image:
-    stage: package
-    script:
-        - echo 'build image'
-
-trivy:
-    stage: package
-    script:
-        - echo 'scan image'
-    needs:
-        - job: build_image
-
-deploy_dev:
-    stage: deploy_dev
-    script:
-        - echo "dev"
-        - make build
-    environment: dev
+        - npm ci
     artifacts:
         paths:
-            - build/
-        expire_in: 2 weeks
-    only:
-        - main
-        - tags
+            - node_modules/
+        expire_in: 1 hour
 
-deploy_staging:
-    stage: deploy_staging
-    script: echo "staging"
-    environment: staging
-    when: manual
+# ---- BUILD ----
+build:
+    stage: build
+    image: node:20
+    script:
+        - npm run build
+    needs: [install_dependencies]
+    artifacts:
+        paths:
+            - dist/
+        expire_in: 1 hour
+
+# ---- TEST ----
+unit_test:
+    stage: test
+    image: node:20
+    script:
+        - npm test
+    needs: [install_dependencies]
+
+# ---- SECURITY ----
+sast_scan:
+    stage: security
+    image: node:20
+    script:
+        - npm install -g snyk
+        - snyk test --severity-threshold=medium
+    only:
+        - merge_requests
+        - main
+    allow_failure: true # Optional: avoid blocking MR if test fails
+
+dependency_check:
+    stage: security
+    image: node:20
+    script:
+        - npm audit --audit-level=moderate
+    allow_failure: false
+
+# ---- PACKAGE ----
+docker_build:
+    stage: package
+    image: docker:latest
+    services:
+        - docker:dind
+    script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+        - echo "trivy"
+        # Scan the local image before pushing
+        - apk add --no-cache curl  # Alpine needed to download Trivy
+        - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        - trivy image --exit-code 1 --severity HIGH,CRITICAL myimage:local
+        # If scan passed, tag & push 
+        - docker build -t $DOCKER_IMAGE .
+        - docker push $DOCKER_IMAGE
     only:
         - main
+
+
+
+# ---- DEPLOY ----
+deploy_staging:
+    stage: deploy
+    script:
+        - echo "Deploying to staging"
+        - kubectl set image deployment/node-app node=$DOCKER_IMAGE --record
+    environment:
+        name: staging
+        url: https://staging.example.com
+    only:
+        - main
+    when: manual # Optional approval step
 
 deploy_prod:
-    stage: deploy_prod
-    script: echo "prod"
-    environment: prod
-    when: manual
+    stage: deploy
+    script:
+        - echo "Deploying to production"
+        - kubectl set image deployment/node-app node=$DOCKER_IMAGE --record
+    environment:
+        name: production
+        url: https://example.com
     only:
-        - main
+        - tags
+    when: manual
+
+# ---- NOTIFY ----
+# slack_notify:
+#     stage: notify
+    # script:
+        # - curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
+    # when: always
+# build:
+#     stage: build
+#     script:
+#         - echo 'build'
+
+# unit_test:
+#     stage: test
+#     script:
+#         - echo 'test'
+
+# sonarqube:
+#     stage: test
+#     script:
+#         - echo 'sonarqube'
+#     needs:
+#         - job: unit_test
+
+# owap:
+#     stage: test
+#     script:
+#         - echo 'owap zap'
+#     needs:
+#         - job: sonarqube
+
+# build_image:
+#     stage: package
+#     script:
+#         - echo 'build image'
+
+# trivy:
+#     stage: package
+#     script:
+#         - echo 'scan image'
+#     needs:
+#         - job: build_image
+
+# deploy_dev:
+#     stage: deploy_dev
+#     script:
+#         - echo "dev"
+#         - mkdir build
+#     environment: dev
+#     artifacts:
+#         paths:
+#             - build/
+#         expire_in: 2 weeks
+#     only:
+#         - main
+#         - tags
+
+# deploy_staging:
+#     stage: deploy_staging
+#     script: echo "staging"
+#     environment: staging
+#     when: manual
+#     only:
+#         - main
+
+# deploy_prod:
+#     stage: deploy_prod
+#     script: echo "prod"
+#     environment: prod
+#     when: manual
+#     only:
+#         - main
