@@ -31,13 +31,6 @@ cache:
     paths:
         - node_modules/
 
-        - build
-        - test
-        - package
-        - deploy_dev
-        - deploy_staging
-        - deploy_prod
-
 build:
     stage: build
     script:
@@ -52,11 +45,15 @@ sonarqube:
     stage: test
     script:
         - echo 'sonarqube'
+    needs:
+        - job: unit_test
 
 owap:
     stage: test
     script:
         - echo 'owap zap'
+    needs:
+        - job: sonarqube
 
 build_image:
     stage: package
@@ -67,6 +64,8 @@ trivy:
     stage: package
     script:
         - echo 'scan image'
+    needs:
+        - job: build_image
 
 deploy_dev:
     stage: deploy_dev
