@@ -1,0 +1,17 @@
+FROM node:23-bookworm-slim AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci --omit=dev
+
+COPY . .
+
+RUN npm run build
+
+# Production Stage
+FROM nginx:1.27.4-alpine-slim AS production
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
