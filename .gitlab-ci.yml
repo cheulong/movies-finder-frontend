@@ -78,6 +78,15 @@ unit_test:
     needs: [install_dependencies]
 
 # ---- SECURITY ----
+gitleaks_scan:
+  stage: security
+  image: zricethezav/gitleaks:latest
+  script:
+    - gitleaks detect --source . --exit-code 1 --no-git --redact
+  allow_failure: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 sast_scan:
     stage: security
     image: node:20
