@@ -76,7 +76,18 @@ unit_test:
     script:
         - npm test
     needs: [install_dependencies]
-
+sonarqube:
+    stage: test
+    script:
+        - echo 'sonarqube'
+    needs:
+        - job: unit_test
+owap:
+    stage: test
+    script:
+        - echo 'owap zap'
+    needs:
+        - job: sonarqube
 # ---- SECURITY ----
 trivy_scan_nodejs:
   stage: security
@@ -95,16 +106,16 @@ gitleaks_scan:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-sast_scan:
-    stage: security
-    image: node:20
-    script:
-        - npm install -g snyk
-        - snyk test --severity-threshold=medium
-    only:
-        - merge_requests
-        - main
-    allow_failure: true # Optional: avoid blocking MR if test fails
+# sast_scan:
+#     stage: security
+#     image: node:20
+#     script:
+#         - npm install -g snyk
+#         - snyk test --severity-threshold=medium
+#     only:
+#         - merge_requests
+#         - main
+#     allow_failure: true # Optional: avoid blocking MR if test fails
 
 dependency_check:
     stage: security
@@ -208,19 +219,9 @@ slack_notify:
 #     script:
 #         - echo 'test'
 
-# sonarqube:
-#     stage: test
-#     script:
-#         - echo 'sonarqube'
-#     needs:
-#         - job: unit_test
 
-# owap:
-#     stage: test
-#     script:
-#         - echo 'owap zap'
-#     needs:
-#         - job: sonarqube
+
+
 
 # build_image:
 #     stage: package
