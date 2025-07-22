@@ -1,0 +1,99 @@
+# This file is a template, and might need editing before it works on your project.
+# You can copy and paste this template into a new `.gitlab-ci.yml` file.
+# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
+#
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/development/cicd/templates/
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Nodejs.gitlab-ci.yml
+stages:
+    - build
+    - test
+    - package
+    - deploy_dev
+    - deploy_staging
+    - deploy_prod
+# Official framework image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/node/tags/
+image: node:latest
+
+# Pick zero or more services to be used on all builds.
+# Only needed when using a docker container to run your tests in.
+# Check out: https://docs.gitlab.com/ee/ci/services/
+services:
+#   - mysql:latest
+#   - redis:latest
+#   - postgres:latest
+
+# This folder is cached between builds
+# https://docs.gitlab.com/ee/ci/yaml/#cache
+cache:
+    paths:
+        - node_modules/
+
+        - build
+        - test
+        - package
+        - deploy_dev
+        - deploy_staging
+        - deploy_prod
+
+build:
+    stage: build
+    script:
+        - echo 'build'
+
+unit_test:
+    stage: test
+    script:
+        - echo 'test'
+
+sonarqube:
+    stage: test
+    script:
+        - echo 'sonarqube'
+
+owap:
+    stage: test
+    script:
+        - echo 'owap zap'
+
+build_image:
+    stage: package
+    script:
+        - echo 'build image'
+
+trivy:
+    stage: package
+    script:
+        - echo 'scan image'
+
+deploy_dev:
+    stage: deploy_dev
+    script:
+        - echo "dev"
+        - make build
+    environment: dev
+    artifacts:
+        paths:
+            - build/
+        expire_in: 2 weeks
+    only:
+        - main
+        - tags
+
+deploy_staging:
+    stage: deploy_staging
+    script: echo "staging"
+    environment: staging
+    when: manual
+    only:
+        - main
+
+deploy_prod:
+    stage: deploy_prod
+    script: echo "prod"
+    environment: prod
+    when: manual
+    only:
+        - main
