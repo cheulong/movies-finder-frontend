@@ -117,7 +117,7 @@ sonarcloud-check:
 # ---- SECURITY ----
 owap_zap:
     stage: security
-    image: owasp/zap2docker-stable
+    image: zaproxy/zap-stable
     allow_failure: true
     script:
         - echo 'owap zap'
