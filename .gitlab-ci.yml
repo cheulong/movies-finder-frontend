@@ -187,7 +187,9 @@ install_dependencies:
 #         - main
 #     allow_failure: true # Optional: avoid blocking MR if test fails
 dependency_check:
-  image: owasp/dependency-check:latest
+  image: 
+    name: owasp/dependency-check:latest
+    entrypoint: [""]
   stage: security
   script:
     - dependency-check.sh \
