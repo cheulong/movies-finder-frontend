@@ -187,12 +187,19 @@ install_dependencies:
 #         - main
 #     allow_failure: true # Optional: avoid blocking MR if test fails
 dependency_check:
-  image: 
+  image:
     name: owasp/dependency-check:latest
+    entrypoint: [""]
   stage: security
   script:
     - mkdir -p dependency-check-report
-    - dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+    - /usr/share/dependency-check/bin/dependency-check.sh \
+        --project "my-project" \
+        --scan . \
+        --format "HTML" \
+        --out dependency-check-report \
+        --failOnCVSS 7
+    - ls -R dependency-check-report
   artifacts:
     paths:
       - dependency-check-report/
