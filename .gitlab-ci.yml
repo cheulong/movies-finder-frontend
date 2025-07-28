@@ -61,21 +61,14 @@ variables:
 # ---- PREPARE ----
 install_dependencies:
   stage: prepare
-  image: docker:20.10.24
-  services:
-    - docker:dind
   script:
-    - echo "Installing dependencies"
-    - docker run -d -p 3000:3000 bkimminich/juice-shop 
-  # stage: prepare
-  # script:
-  #   - npm ci --ignore-scripts
-  #   - npm run dev & # Start the app in the background
-  #   - sleep 10 # Wait for the app to start (optional, adjust as needed
-  # artifacts:
-  #   paths:
-  #     - node_modules/
-  #   expire_in: 1 hour
+    - npm ci --ignore-scripts
+    - npm run dev & # Start the app in the background
+    - sleep 10 # Wait for the app to start (optional, adjust as needed
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
 
 # # ---- BUILD ----
 # build:
@@ -136,10 +129,10 @@ owap_zap:
     script:
         
         - echo 'owap zap'
-        - zap-full-scan.py -t http://172.0.0.1:3000/ -g gen.conf -r zap-report.html
+        - zap-baseline-scan.py -t http://172.0.0.1:5173/ -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
-        # api scan: zap-full-scan.py
+        # api scan: zap-api-scan.py
     needs:
       - job: install_dependencies
     artifacts:
