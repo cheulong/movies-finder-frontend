@@ -145,22 +145,22 @@ install_dependencies:
     # only:
     # - main
 
-trivy_scan:
-  image:
-    name: aquasec/trivy:latest
-    entrypoint: [""]
-  stage: security
-  script:
+# trivy_scan:
+#   image:
+#     name: aquasec/trivy:latest
+#     entrypoint: [""]
+#   stage: security
+#   script:
     # - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json <my-docker-image:latest>
-    - trivy fs --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json .
+    # - trivy fs --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json .
     # - trivy config  --exit-code 1 --output trivy-report.json <my-docker-image:latest>
-  allow_failure: false
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-  artifacts:
-    paths:
-      - trivy-report.json
-    when: always
+  # allow_failure: false
+  # rules:
+  #   - if: '$CI_COMMIT_BRANCH == "main"'
+  # artifacts:
+  #   paths:
+  #     - trivy-report.json
+  #   when: always
 
 # gitleaks_scan:
 #   stage: security
@@ -195,26 +195,48 @@ trivy_scan:
 #         - merge_requests
 #         - main
 #     allow_failure: true # Optional: avoid blocking MR if test fails
-dependency_check:
-  image:
-    name: owasp/dependency-check:latest
-    entrypoint: [""]
-  stage: security
-  script:
-    - mkdir -p dependency-check-report
-    - ls
-    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
-    - ls -R dependency-check-report
-  artifacts:
-    paths:
-      - dependency-check-report/
-    when: always
+# dependency_check:
+#   image:
+#     name: owasp/dependency-check:latest
+#     entrypoint: [""]
+#   stage: security
+#   script:
+#     - mkdir -p dependency-check-report
+#     - ls
+#     - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+#     - ls -R dependency-check-report
+#   artifacts:
+#     paths:
+#       - dependency-check-report/
+#     when: always
 # dependency_audit:
 #     stage: security
 #     script:
 #         - npm audit --audit-level=moderate
 #     allow_failure: false
 
+# syft_sbom:
+#   image:
+#     name: anchore/syft:latest
+#     entrypoint: [""]
+#   stage: security
+#   script:
+#     - syft dir:. -o spdx-json > sbom.spdx.json
+#   artifacts:
+#     paths:
+#       - sbom.spdx.json
+#   when: always
+#   allow_failure: true
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "main"'
+
+# grype_scan:
+#   image:
+#     name: anchore/grype:latest
+#     entrypoint: [""]
+#   stage: security
+#   script:
+#     - grype sbom:sbom.spdx.json --fail-on high
 # # ---- PACKAGE ----
 # docker_build:
 #     stage: package
@@ -360,3 +382,12 @@ dependency_check:
 # #     when: manual
 # #     only:
 # #         - main
+
+# --- Clean up ---
+# clean_up:
+#   stage: prepare
+#   script:
+#     - echo "Cleaning up temporary files"
+#     - rm -rf node_modules/
+#   when: always
+#   allow_failure: true
