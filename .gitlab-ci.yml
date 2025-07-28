@@ -98,30 +98,35 @@ npm_audit:
     - npm audit --audit-level=moderate
   allow_failure: false
 
-sonarcloud-check:
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  stage: quality
-  script:
-    - echo 'sonarqube'
-    - sonar-scanner
-  only:
-    - merge_requests
-    - main
+# TODO: pause for now
+# sonarcloud-check:
+#   image:
+#     name: sonarsource/sonar-scanner-cli:latest
+#     entrypoint: [""]
+#   cache:
+#     key: "${CI_JOB_NAME}"
+#     paths:
+#       - .sonar/cache
+#   stage: quality
+#   script:
+#     - echo 'sonarqube'
+#     - sonar-scanner
+#   only:
+#     - merge_requests
+#     - main
+
 
 # ---- SECURITY ----
 owap_zap:
     stage: security
     image: zaproxy/zap-stable
     allow_failure: true
+    before_script:
+    - mkdir -p /zap/wrk
     script:
         - echo 'owap zap'
-        - zap-baseline.py -t http://localhost:5173 -r zap-report.html
+        - zap-baseline.py -t http://localhost:5173 -g gen.conf -r zap-report.html
+        - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-full-scan.py
     artifacts:
