@@ -20,9 +20,9 @@ stages:
   - test
   - quality
 #     - build
-#     - security
+  - security
 #     - package
-#     - deploy
+  - deploy
 #     - notify
 
 # # Official framework image. Look for the different tagged releases at:
@@ -90,6 +90,12 @@ playwright_test:
 
 # ---- QUALITY ----
 
+npm_audit:
+  stage: quality
+  script:
+    - npm audit --audit-level=moderate
+  allow_failure: false
+
 sonarcloud-check:
   image:
     name: sonarsource/sonar-scanner-cli:latest
@@ -105,13 +111,29 @@ sonarcloud-check:
   only:
     - merge_requests
     - main
-# owap:
-#     stage: test
-#     script:
-#         - echo 'owap zap'
-#     needs:
-#         - job: sonarqube
-# # ---- SECURITY ----
+
+# ---- SECURITY ----
+owap_zap:
+    stage: security
+    image: owasp/zap2docker-stable
+    allow_failure: true
+    script:
+        - echo 'owap zap'
+        - zap-baseline.py -t http://localhost:80 -r zap-report.html
+        # full scan: zap-full-scan.py
+        # api scan: zap-full-scan.py
+    needs:
+      - run_app
+    artifacts:
+        expire_in: "30 days"
+        when: always
+        reports:
+          dast: zap-report.html
+        paths:
+          - zap-report.html
+    # only:
+    # - main
+
 # trivy_scan_nodejs:
 #   stage: security
 #   image: aquasec/trivy:latest
@@ -166,7 +188,19 @@ sonarcloud-check:
 #     only:
 #         - main
 
-# # ---- DEPLOY ----
+# ---- DEPLOY ----
+run_app:
+  stage: deploy
+  services:
+    - docker:dind
+  image: docker:latest
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+  script:
+    - docker compose -f compose.prod.yml up -d
+    - sleep 15  # wait for app to start
+         # wait for app
 # deploy_staging:
 #     stage: deploy
 #     script:
