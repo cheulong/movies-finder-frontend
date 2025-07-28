@@ -191,12 +191,11 @@ dependency_check:
     name: owasp/dependency-check:latest
   stage: security
   script:
-    - dependency-check.sh --prettyPrint --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+    - mkdir -p dependency-check-report
+    - dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
   artifacts:
     paths:
-      - dependency-check-report
-    reports:
-      dependency_scanning: dependency-check-report/dependency-check-report.html
+      - dependency-check-report/
     when: always
 # dependency_audit:
 #     stage: security
