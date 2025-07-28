@@ -22,7 +22,7 @@ stages:
 #     - build
   - security
 #     - package
-  - deploy
+  # - deploy
 #     - notify
 
 # # Official framework image. Look for the different tagged releases at:
@@ -55,6 +55,8 @@ install_dependencies:
   stage: prepare
   script:
     - npm ci
+    - npm run dev & # Start the app in the background
+    - sleep 10 # Wait for the app to start (optional, adjust as needed
   artifacts:
     paths:
       - node_modules/
@@ -119,11 +121,9 @@ owap_zap:
     allow_failure: true
     script:
         - echo 'owap zap'
-        - zap-baseline.py -t http://localhost:80 -r zap-report.html
+        - zap-baseline.py -t http://localhost:5173 -r zap-report.html
         # full scan: zap-full-scan.py
         # api scan: zap-full-scan.py
-    needs:
-      - run_app
     artifacts:
         expire_in: "30 days"
         when: always
@@ -189,17 +189,17 @@ owap_zap:
 #         - main
 
 # ---- DEPLOY ----
-run_app:
-  stage: deploy
-  services:
-    - docker:dind
-  image: docker:latest
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_DRIVER: overlay2
-  script:
-    - docker compose -f compose.prod.yml up -d
-    - sleep 15  # wait for app to start
+# run_app:
+#   stage: deploy
+#   services:
+#     - docker:dind
+#   image: docker:latest
+#   variables:
+#     DOCKER_HOST: tcp://docker:2375/
+#     DOCKER_DRIVER: overlay2
+#   script:
+#     - docker compose -f compose.prod.yml up -d
+#     - sleep 15  # wait for app to start
          # wait for app
 # deploy_staging:
 #     stage: deploy
