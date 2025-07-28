@@ -75,6 +75,12 @@ unit_test:
     script:
         - npm run test
     needs: [install_dependencies]
+playwright_test:
+    stage: test
+    image: mcr.microsoft.com/playwright:v1.54.0-noble
+    script:
+        - npm run playwright
+    needs: [install_dependencies]
 # sonarqube:
 #     stage: test
 #     script:
