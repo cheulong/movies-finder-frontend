@@ -155,18 +155,33 @@ owap_zap:
 #     - if: '$CI_COMMIT_BRANCH == "main"'
 gitleaks_scan:
   stage: security
-  image: zricethezav/gitleaks:latest
+  image: 
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+
   script:
     - gitleaks detect --source . --exit-code 1 --no-git --redact
+  artifacts:
+    paths:
+      - gitleaks-report.json
+    when: always
   allow_failure: false
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 sast_scan:
+    image: snyk/snyk:docker
     stage: security
     script:
-        - npm install -g snyk
-        - snyk test --severity-threshold=medium
+        - snyk auth $SNYK_TOKEN
+        - snyk test --severity-threshold=medium --json > snyk-report.json
+        - snyk code test --severity-threshold=medium --json > snyk-code-report.json
+    artifacts:
+        paths:
+            - snyk-report.json
+            - snyk-code-report.json
+        when: always
     only:
         - merge_requests
         - main
