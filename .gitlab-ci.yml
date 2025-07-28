@@ -198,7 +198,7 @@ dependency_check:
         --failOnCVSS 7
   artifacts:
     paths:
-      - dependency-check-report/dependency-check-report.html
+      - dependency-check-report
     when: always
 # dependency_audit:
 #     stage: security
