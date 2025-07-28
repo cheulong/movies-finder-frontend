@@ -145,14 +145,23 @@ install_dependencies:
     # only:
     # - main
 
-# trivy_scan_nodejs:
-#   stage: security
-#   image: aquasec/trivy:latest
-#   script:
-#     - trivy fs --format table -o fs.html --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed .
-#   allow_failure: false
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "main"'
+trivy_scan:
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  stage: security
+  script:
+    # - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json <my-docker-image:latest>
+    - trivy fs --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json .
+    # - trivy config  --exit-code 1 --output trivy-report.json <my-docker-image:latest>
+  allow_failure: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  artifacts:
+    paths:
+      - trivy-report.json
+    when: always
+
 # gitleaks_scan:
 #   stage: security
 #   image: 
