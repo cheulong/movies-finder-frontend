@@ -129,7 +129,7 @@ owap_zap:
     script:
         
         - echo 'owap zap'
-        - zap-baseline-scan.py -t http://172.0.0.1:5173/ -g gen.conf -r zap-report.html
+        - zap-baseline.py -t http://172.0.0.1:5173/ -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-api-scan.py
@@ -175,8 +175,8 @@ sast_scan:
     stage: security
     script:
         - snyk auth $SNYK_TOKEN
-        - snyk test --severity-threshold=medium --json > snyk-report.json
-        - snyk code test --severity-threshold=medium --json > snyk-code-report.json
+        - snyk test --severity-threshold=medium --json-file-output=snyk-report.json
+        - snyk code test --severity-threshold=medium --json-file-output=snyk-code-report.json
     artifacts:
         paths:
             - snyk-report.json
