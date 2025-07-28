@@ -170,24 +170,37 @@ install_dependencies:
 #     - if: '$CI_COMMIT_BRANCH == "main"'
 #     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-sast_scan:
-    image: 
-      name: snyk/snyk:docker
-      entrypoint: [""]
-    stage: security
-    script:
-      - snyk auth $SNYK_TOKEN
-      - snyk test --all-projects --json-file-output=report.json
-    artifacts:
-        paths:
-          - report.json
-        when: always
-    only:
-        - merge_requests
-        - main
-    allow_failure: true # Optional: avoid blocking MR if test fails
-
-# dependency_check:
+# snyk_scan:
+#     image: 
+#       name: snyk/snyk:docker
+#       entrypoint: [""]
+#     stage: security
+#     script:
+#       - snyk auth $SNYK_TOKEN
+#       - snyk test --all-projects --json-file-output=report.json
+#     artifacts:
+#         paths:
+#           - report.json
+#         when: always
+#     only:
+#         - merge_requests
+#         - main
+#     allow_failure: true # Optional: avoid blocking MR if test fails
+dependency_check:
+  image: owasp/dependency-check:latest
+  stage: security
+  script:
+    - dependency-check.sh \
+        --project "my-project" \
+        --scan . \
+        --format "HTML" \
+        --out dependency-check-report \
+        --failOnCVSS 7
+  artifacts:
+    paths:
+      - dependency-check-report/dependency-check-report.html
+    when: always
+# dependency_audit:
 #     stage: security
 #     script:
 #         - npm audit --audit-level=moderate
