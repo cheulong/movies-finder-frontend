@@ -15,10 +15,10 @@
 # #     - deploy_staging
 # #     - deploy_prod
 
-# stages:
-#     - prepare
+stages:
+    - prepare
+    - test
 #     - build
-#     - test
 #     - security
 #     - quality
 #     - package
@@ -27,7 +27,7 @@
 
 # # Official framework image. Look for the different tagged releases at:
 # # https://hub.docker.com/r/library/node/tags/
-# image: node:23-bookworm-slim
+image: node:23-bookworm-slim
 
 # # Pick zero or more services to be used on all builds.
 # # Only needed when using a docker container to run your tests in.
@@ -39,23 +39,23 @@
 
 # # This folder is cached between builds
 # # https://docs.gitlab.com/ee/ci/yaml/#cache
-# cache:
-#     paths:
-#         - node_modules/
+cache:
+    paths:
+        - node_modules/
 
 # variables:
 #     NODE_ENV: production
 #     DOCKER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH/app:$CI_COMMIT_SHORT_SHA
 
-# # ---- PREPARE ----
-# install_dependencies:
-#     stage: prepare
-#     script:
-#         - npm ci
-#     artifacts:
-#         paths:
-#             - node_modules/
-#         expire_in: 1 hour
+# ---- PREPARE ----
+install_dependencies:
+    stage: prepare
+    script:
+        - npm ci
+    artifacts:
+        paths:
+            - node_modules/
+        expire_in: 1 hour
 
 # # ---- BUILD ----
 # build:
@@ -69,7 +69,7 @@
 #             - dist/
 #         expire_in: 1 hour
 
-# # ---- TEST ----
+# ---- TEST ----
 # unit_test:
 #     stage: test
 #     image: node:22
