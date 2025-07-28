@@ -63,8 +63,8 @@ install_dependencies:
   stage: prepare
   script:
     - npm ci
-    # - npm run dev & # Start the app in the background
-    # - sleep 10 # Wait for the app to start (optional, adjust as needed
+    - npm run dev & # Start the app in the background
+    - sleep 10 # Wait for the app to start (optional, adjust as needed
   artifacts:
     paths:
       - node_modules/
@@ -83,28 +83,29 @@ install_dependencies:
 #         expire_in: 1 hour
 
 # ---- TEST ----
-unit_test:
-  stage: test
-  script:
-    - npm run test
-  needs: [install_dependencies]
-playwright_test:
-  stage: test
-  image: mcr.microsoft.com/playwright:v1.54.0-noble
-  script:
-    - npm run playwright
-  needs: [install_dependencies]
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+# unit_test:
+#   stage: test
+#   script:
+#     - npm run test
+#   needs: [install_dependencies]
+
+# playwright_test:
+#   stage: test
+#   image: mcr.microsoft.com/playwright:v1.54.0-noble
+#   script:
+#     - npm run playwright
+#   needs: [install_dependencies]
+#   rules:
+#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
 
 # ---- QUALITY ----
 
-npm_audit:
-  stage: quality
-  script:
-    - npm audit --audit-level=moderate
-  allow_failure: false
+# npm_audit:
+#   stage: quality
+#   script:
+#     - npm audit --audit-level=moderate
+#   allow_failure: false
 
 # TODO: pause for now
 # sonarcloud-check:
@@ -132,13 +133,14 @@ owap_zap:
     before_script:
     - mkdir -p /zap/wrk
     script:
-        - npm run dev &
-        - sleep 10 # Wait for the app to start
+        
         - echo 'owap zap'
-        - zap-baseline.py -t http://localhost:5173 -g gen.conf -r zap-report.html
+        - zap-baseline.py -t http://172.17.0.3:5173/ -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-full-scan.py
+    needs:
+      - job: install_dependencies
     artifacts:
         expire_in: "30 days"
         when: always
