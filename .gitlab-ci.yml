@@ -193,12 +193,8 @@ dependency_check:
   stage: security
   script:
     - mkdir -p dependency-check-report
-    - /usr/share/dependency-check/bin/dependency-check.sh \
-        --project "my-project" \
-        --scan . \
-        --format "HTML" \
-        --out dependency-check-report \
-        --failOnCVSS 7
+    - ls
+    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
     - ls -R dependency-check-report
   artifacts:
     paths:
