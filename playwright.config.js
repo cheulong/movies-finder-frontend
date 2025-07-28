@@ -1,35 +1,63 @@
-import { defineConfig, devices } from "@playwright/test";
+// @ts-check
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  // Look for test files in the "tests" directory, relative to this configuration file.
-  testDir: "e2e",
+  testDir: './e2e',
   fullyParallel: true,
-  // Folder for test artifacts such as screenshots, videos, traces, etc.
-  outputDir: "test-results",
-  // Glob patterns or regular expressions to ignore test files.
-  testIgnore: "*test-assets",
-  // Reporter to use
-  reporter: "null",
-  // Glob patterns or regular expressions that match test files.
-  testMatch: "*e2e/*.test.js",
+  outputDir: 'test-results/',
+  testIgnore: "*test-assets/*",
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'null',
+  testMatch: '*e2e/*.test.js',
   use: {
-    // Base URL to use in actions like `await page.goto('/')`.
-    baseURL: "http://localhost:5173",
-
-    // Collect trace when retrying the failed test.
-    trace: "on-first-retry",
+    baseURL: 'http://localhost:5173',
+    trace: 'on-first-retry',
   },
-  // Run your local dev server before starting the tests.
 
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173",
-  },
   projects: [
-    /* Test against desktop browsers */
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"], channel: "chromium" },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
     },
+
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
+
+    /* Test against mobile viewports. */
+    // {
+    //   name: 'Mobile Chrome',
+    //   use: { ...devices['Pixel 5'] },
+    // },
+    // {
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 12'] },
+    // },
+
+    /* Test against branded browsers. */
+    // {
+    //   name: 'Microsoft Edge',
+    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    // },
+    // {
+    //   name: 'Google Chrome',
+    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    // },
   ],
+
+  /* Run your local dev server before starting the tests */
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+  },
 });
+

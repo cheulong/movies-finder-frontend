@@ -1,8 +1,12 @@
 node_modules
 *.md
-build
-.gitignore
+*.log
+*.env.*
 .git
-.env.*
+.gitignore
+.vscode
 Dockerfile*
 compose*
+dist
+coverage
+build
