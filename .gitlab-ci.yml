@@ -189,19 +189,14 @@ install_dependencies:
 dependency_check:
   image: 
     name: owasp/dependency-check:latest
-    entrypoint: [""]
   stage: security
   script:
-    - dependency-check.sh \
-        --project "my-project" \
-        --scan . \
-        --format "HTML" \
-        --out dependency-check-report \
-        --failOnCVSS 7
-    - cd dependency-check-report && ls
+    - dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
   artifacts:
     paths:
       - dependency-check-report
+    reports:
+      dependency_scanning: dependency-check-report/dependency-check-report.html
     when: always
 # dependency_audit:
 #     stage: security
