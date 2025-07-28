@@ -108,12 +108,6 @@ install_dependencies:
 
 # ---- QUALITY ----
 
-# npm_audit:
-#   stage: quality
-#   script:
-#     - npm audit --audit-level=moderate
-#   allow_failure: false
-
 # TODO: pause for now
 # sonarcloud-check:
 #   image:
@@ -142,7 +136,7 @@ owap_zap:
     script:
         
         - echo 'owap zap'
-        - zap-baseline.py -t http://172.0.0.1:3000/ -g gen.conf -r zap-report.html
+        - zap-full-scan.py -t http://172.0.0.1:3000/ -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-full-scan.py
@@ -166,29 +160,27 @@ owap_zap:
 #   allow_failure: false
 #   rules:
 #     - if: '$CI_COMMIT_BRANCH == "main"'
-# gitleaks_scan:
-#   stage: security
-#   image: zricethezav/gitleaks:latest
-#   script:
-#     - gitleaks detect --source . --exit-code 1 --no-git --redact
-#   allow_failure: false
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "main"'
-#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-# # sast_scan:
-# #     stage: security
-# #     image: node:20
-# #     script:
-# #         - npm install -g snyk
-# #         - snyk test --severity-threshold=medium
-# #     only:
-# #         - merge_requests
-# #         - main
-# #     allow_failure: true # Optional: avoid blocking MR if test fails
+gitleaks_scan:
+  stage: security
+  image: zricethezav/gitleaks:latest
+  script:
+    - gitleaks detect --source . --exit-code 1 --no-git --redact
+  allow_failure: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+sast_scan:
+    stage: security
+    script:
+        - npm install -g snyk
+        - snyk test --severity-threshold=medium
+    only:
+        - merge_requests
+        - main
+    allow_failure: true # Optional: avoid blocking MR if test fails
 
 # dependency_check:
 #     stage: security
-#     image: node:20
 #     script:
 #         - npm audit --audit-level=moderate
 #     allow_failure: false
