@@ -174,13 +174,11 @@ sast_scan:
     image: snyk/snyk:docker
     stage: security
     script:
-        - snyk auth $SNYK_TOKEN
-        - snyk test --severity-threshold=medium --json-file-output=snyk-report.json
-        - snyk code test --severity-threshold=medium --json-file-output=snyk-code-report.json
+      - snyk auth $SNYK_TOKEN
+      - snyk test --all-projects --json-file-output=report.json
     artifacts:
         paths:
-            - snyk-report.json
-            - snyk-code-report.json
+          - report.json
         when: always
     only:
         - merge_requests
