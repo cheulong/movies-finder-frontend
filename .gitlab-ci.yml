@@ -70,12 +70,11 @@ install_dependencies:
 #         expire_in: 1 hour
 
 # ---- TEST ----
-# unit_test:
-#     stage: test
-#     image: node:22
-#     script:
-#         - npm test
-#     needs: [install_dependencies]
+unit_test:
+    stage: test
+    script:
+        - npm run test
+    needs: [install_dependencies]
 # sonarqube:
 #     stage: test
 #     script:
