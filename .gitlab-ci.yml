@@ -17,10 +17,18 @@
 
 stages:
   - prepare
+#     - build
   - test
   - quality
-#     - build
   - security
+#     - package
+  # - deploy
+#     - notify
+
+  # - build
+  # - test
+  # - quality
+  # - security
 #     - package
   # - deploy
 #     - notify
@@ -55,8 +63,8 @@ install_dependencies:
   stage: prepare
   script:
     - npm ci
-    - npm run dev & # Start the app in the background
-    - sleep 10 # Wait for the app to start (optional, adjust as needed
+    # - npm run dev & # Start the app in the background
+    # - sleep 10 # Wait for the app to start (optional, adjust as needed
   artifacts:
     paths:
       - node_modules/
@@ -124,6 +132,8 @@ owap_zap:
     before_script:
     - mkdir -p /zap/wrk
     script:
+        - npm run dev &
+        - sleep 10 # Wait for the app to start
         - echo 'owap zap'
         - zap-baseline.py -t http://localhost:5173 -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
