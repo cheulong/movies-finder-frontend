@@ -16,8 +16,8 @@
 # #     - deploy_prod
 
 stages:
-    - prepare
-    - test
+  - prepare
+  - test
 #     - build
 #     - security
 #     - quality
@@ -40,22 +40,25 @@ image: node:23-bookworm-slim
 # # This folder is cached between builds
 # # https://docs.gitlab.com/ee/ci/yaml/#cache
 cache:
-    paths:
-        - node_modules/
+  paths:
+    - node_modules/
 
-# variables:
-#     NODE_ENV: production
-#     DOCKER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH/app:$CI_COMMIT_SHORT_SHA
+variables:
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
+  GIT_DEPTH:
+    "0" # Tells git to fetch all the branches of the project, required by the analysis task
+    # NODE_ENV: production
+    # DOCKER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH/app:$CI_COMMIT_SHORT_SHA
 
 # ---- PREPARE ----
 install_dependencies:
-    stage: prepare
-    script:
-        - npm ci
-    artifacts:
-        paths:
-            - node_modules/
-        expire_in: 1 hour
+  stage: prepare
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
 
 # # ---- BUILD ----
 # build:
@@ -71,22 +74,33 @@ install_dependencies:
 
 # ---- TEST ----
 unit_test:
-    stage: test
-    script:
-        - npm run test
-    needs: [install_dependencies]
+  stage: test
+  script:
+    - npm run test
+  needs: [install_dependencies]
 playwright_test:
-    stage: test
-    image: mcr.microsoft.com/playwright:v1.54.0-noble
-    script:
-        - npm run playwright
-    needs: [install_dependencies]
-# sonarqube:
-#     stage: test
-#     script:
-#         - echo 'sonarqube'
-#     needs:
-#         - job: unit_test
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.54.0-noble
+  script:
+    - npm run playwright
+  needs: [install_dependencies]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+sonarcloud-check:
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  stage: test
+  script:
+    - echo 'sonarqube'
+    - sonar-scanner
+  only:
+    - merge_requests
+    - main
 # owap:
 #     stage: test
 #     script:
@@ -142,14 +156,11 @@ playwright_test:
 #         - apk add --no-cache curl  # Alpine needed to download Trivy
 #         - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 #         - trivy image --exit-code 1 --severity HIGH,CRITICAL myimage:local
-#         # If scan passed, tag & push 
+#         # If scan passed, tag & push
 #         - docker build -t $DOCKER_IMAGE .
 #         - docker push $DOCKER_IMAGE
 #     only:
 #         - main
-
-
-
 
 # # ---- DEPLOY ----
 # deploy_staging:
@@ -223,10 +234,6 @@ playwright_test:
 # #     stage: test
 # #     script:
 # #         - echo 'test'
-
-
-
-
 
 # # build_image:
 # #     stage: package
