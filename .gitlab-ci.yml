@@ -1,64 +1,27 @@
-# # This file is a template, and might need editing before it works on your project.
-# # You can copy and paste this template into a new `.gitlab-ci.yml` file.
-# # You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
-# #
-# # To contribute improvements to CI/CD templates, please follow the Development guide at:
-# # https://docs.gitlab.com/development/cicd/templates/
-# # This specific template is located at:
-# # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Nodejs.gitlab-ci.yml
-
-# # stages:
-# #     - build
-# #     - test
-# #     - package
-# #     - deploy_dev
-# #     - deploy_staging
-# #     - deploy_prod
-
 stages:
   - gitleaks_scan
-  - dependency_audit
-  - dependency_check
-  - sonarcloud-check
-  - prepare
-  - test
-  - build_image
-  - trivy_scan
-  - owap_zap
-  - snyk_scan
-  - run_app
-  - syft_sbom
-  - grype_scan
-  - deploy_image
-  - update-k8s-manifest
-  - slack_notify
-  - clean_up
+  # - dependency_audit
+  # - dependency_check
+  # - sonarcloud-check
+  # - prepare
+  # - test
+  # - build_image
+  # - trivy_scan
+  # - owap_zap
+  # - snyk_scan
+  # - run_app
+  # - syft_sbom
+  # - grype_scan
+  # - deploy_image
+  # - update-k8s-manifest
+  # - slack_notify
+  # - clean_up
 
-
-# # Official framework image. Look for the different tagged releases at:
-# # https://hub.docker.com/r/library/node/tags/
 image: node:23-bookworm-slim
 
-# # Pick zero or more services to be used on all builds.
-# # Only needed when using a docker container to run your tests in.
-# # Check out: https://docs.gitlab.com/ee/ci/services/
-# services:
-# #   - mysql:latest
-# #   - redis:latest
-# #   - postgres:latest
-
-# # This folder is cached between builds
-# # https://docs.gitlab.com/ee/ci/yaml/#cache
 cache:
   paths:
     - node_modules/
-
-variables:
-  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
-  GIT_DEPTH:
-    "0" # Tells git to fetch all the branches of the project, required by the analysis task
-    # NODE_ENV: production
-    # DOCKER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH/app:$CI_COMMIT_SHORT_SHA
 
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
@@ -74,261 +37,261 @@ gitleaks_scan:
       - gitleaks-report.json
     when: always
   allow_failure: false
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  # rules:
+  #   - if: '$CI_COMMIT_BRANCH == "main"'
+  #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # ---- DEPENDENCY AUDIT ----
-dependency_audit:
-    stage: dependency_audit
-    script:
-        - npm audit --audit-level=moderate
-    allow_failure: false
+# dependency_audit:
+#     stage: dependency_audit
+#     script:
+#         - npm audit --audit-level=moderate
+#     allow_failure: false
 
 
 # -- DEPENDENCY CHECK ----
 # This job runs the OWASP Dependency Check tool to scan for vulnerabilities in dependencies.
-dependency_check:
-  image:
-    name: owasp/dependency-check:latest
-    entrypoint: [""]
-  stage: dependency_check
-  script:
-    - mkdir -p dependency-check-report
-    - ls
-    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
-    - ls -R dependency-check-report
-  artifacts:
-    paths:
-      - dependency-check-report/
-    when: always
+# dependency_check:
+#   image:
+#     name: owasp/dependency-check:latest
+#     entrypoint: [""]
+#   stage: dependency_check
+#   script:
+#     - mkdir -p dependency-check-report
+#     - ls
+#     - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+#     - ls -R dependency-check-report
+#   artifacts:
+#     paths:
+#       - dependency-check-report/
+#     when: always
 
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
 # to be set in the CI/CD settings of your project.
 # The `sonarcloud-check` job is paused for now, as per the TODO comment
 # TODO: pause for now
-sonarcloud-check:
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  stage: sonarcloud-check
-  script:
-    - echo 'sonarqube'
-    - sonar-scanner
-  only:
-    - merge_requests
-    - main
+# sonarcloud-check:
+#   image:
+#     name: sonarsource/sonar-scanner-cli:latest
+#     entrypoint: [""]
+#   cache:
+#     key: "${CI_JOB_NAME}"
+#     paths:
+#       - .sonar/cache
+#   stage: sonarcloud-check
+#   script:
+#     - echo 'sonarqube'
+#     - sonar-scanner
+#   only:
+#     - merge_requests
+#     - main
 
 # ---- PREPARE ----
-install_dependencies:
-  stage: prepare
-  script:
-    - npm ci --ignore-scripts
+# install_dependencies:
+#   stage: prepare
+#   script:
+#     - npm ci --ignore-scripts
     # - npm run dev & # Start the app in the background
     # - sleep 10 # Wait for the app to start (optional, adjust as needed
-  artifacts:
-    paths:
-      - node_modules/
-    expire_in: 1 hour
+  # artifacts:
+  #   paths:
+  #     - node_modules/
+  #   expire_in: 1 hour
 
 # ---- TEST ----
-unit_test:
-  stage: test
-  script:
-    - npm run test
-  needs: [install_dependencies]
+# unit_test:
+#   stage: test
+#   script:
+#     - npm run test
+#   needs: [install_dependencies]
 
-playwright_test:
-  stage: test
-  image: mcr.microsoft.com/playwright:v1.54.0-noble
-  script:
-    - npm run playwright
-  needs: [install_dependencies]
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+# playwright_test:
+#   stage: test
+#   image: mcr.microsoft.com/playwright:v1.54.0-noble
+#   script:
+#     - npm run playwright
+#   needs: [install_dependencies]
+#   rules:
+#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
 # ---- SNYK SCAN ----
 # This job runs the Snyk security scanner against the project.
-snyk_scan:
-    image: 
-      name: snyk/snyk:docker
-      entrypoint: [""]
-    stage: snyk_scan
-    script:
-      - snyk auth $SNYK_TOKEN
-      - snyk test --all-projects --json-file-output=report.json
-    artifacts:
-        paths:
-          - report.json
-        when: always
-    only:
-        - merge_requests
-        - main
-    allow_failure: true # Optional: avoid blocking MR if test fails
+# snyk_scan:
+#     image: 
+#       name: snyk/snyk:docker
+#       entrypoint: [""]
+#     stage: snyk_scan
+#     script:
+#       - snyk auth $SNYK_TOKEN
+#       - snyk test --all-projects --json-file-output=report.json
+#     artifacts:
+#         paths:
+#           - report.json
+#         when: always
+#     only:
+#         - merge_requests
+#         - main
+#     allow_failure: true # Optional: avoid blocking MR if test fails
 
 # ---- BUILD IMAGE ----
-docker_build:
-    stage: build_image
-    image: docker:latest
-    services:
-        - docker:dind
-    script:
-        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-        - echo "trivy"
-        # Scan the local image before pushing
-        - apk add --no-cache curl  # Alpine needed to download Trivy
-        - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-        - trivy image --exit-code 1 --severity HIGH,CRITICAL myimage:local
-        # If scan passed, tag & push
-        - docker build -t $DOCKER_IMAGE .
-    only:
-        - main
+# docker_build:
+#     stage: build_image
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     script:
+#         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#         - echo "trivy"
+#         # Scan the local image before pushing
+#         - apk add --no-cache curl  # Alpine needed to download Trivy
+#         - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+#         - trivy image --exit-code 1 --severity HIGH,CRITICAL myimage:local
+#         # If scan passed, tag & push
+#         - docker build -t $DOCKER_IMAGE .
+#     only:
+#         - main
 
 # ---- TRIVY SCAN ----
 # This job runs the Trivy security scanner against the Docker image and filesystem.
-trivy_scan:
-  image:
-    name: aquasec/trivy:latest
-    entrypoint: [""]
-  stage: trivy_scan
-  script:
-    - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json <my-docker-image:latest>
-    # - trivy fs --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json .
-    # - trivy config  --exit-code 1 --output trivy-report.json <my-docker-image:latest>
-  allow_failure: false
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-  artifacts:
-    paths:
-      - trivy-report.json
-    when: always
+# trivy_scan:
+#   image:
+#     name: aquasec/trivy:latest
+#     entrypoint: [""]
+#   stage: trivy_scan
+#   script:
+#     - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json <my-docker-image:latest>
+#     # - trivy fs --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json .
+#     # - trivy config  --exit-code 1 --output trivy-report.json <my-docker-image:latest>
+#   allow_failure: false
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "main"'
+#   artifacts:
+#     paths:
+#       - trivy-report.json
+#     when: always
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
-run_app:
-  stage: run_app
-  services:
-    - docker:dind
-  image: docker:latest
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_DRIVER: overlay2
-  script:
-    - docker compose -f compose.prod.yml up -d
-    - sleep 15  # wait for app to start
-    - docker ps  # List running containers to verify app is up
+# run_app:
+#   stage: run_app
+#   services:
+#     - docker:dind
+#   image: docker:latest
+#   variables:
+#     DOCKER_HOST: tcp://docker:2375/
+#     DOCKER_DRIVER: overlay2
+#   script:
+#     - docker compose -f compose.prod.yml up -d
+#     - sleep 15  # wait for app to start
+#     - docker ps  # List running containers to verify app is up
 
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
-owap_zap:
-    stage: owap_zap
-    image: zaproxy/zap-stable
-    allow_failure: true
-    before_script:
-    - mkdir -p /zap/wrk
-    script:
+# owap_zap:
+#     stage: owap_zap
+#     image: zaproxy/zap-stable
+#     allow_failure: true
+#     before_script:
+#     - mkdir -p /zap/wrk
+#     script:
         
-        - echo 'owap zap'
-        - zap-baseline.py -t http://172.0.0.1:5173/ -g gen.conf -r zap-report.html
-        - cp /zap/wrk/zap-report.html .
-        full scan: zap-full-scan.py
-        api scan: zap-api-scan.py
-    needs:
-      - job: install_dependencies
-    artifacts:
-        expire_in: "30 days"
-        when: always
-        reports:
-          dast: zap-report.html
-        paths:
-          - zap-report.html
-    only:
-    - main
+#         - echo 'owap zap'
+#         - zap-baseline.py -t http://172.0.0.1:5173/ -g gen.conf -r zap-report.html
+#         - cp /zap/wrk/zap-report.html .
+#         full scan: zap-full-scan.py
+#         api scan: zap-api-scan.py
+#     needs:
+#       - job: install_dependencies
+#     artifacts:
+#         expire_in: "30 days"
+#         when: always
+#         reports:
+#           dast: zap-report.html
+#         paths:
+#           - zap-report.html
+#     only:
+#     - main
 
 # ---- SYFT SBOM ----
 # This job generates a Software Bill of Materials (SBOM) using Syft.
-syft_sbom:
-  image:
-    name: anchore/syft:latest
-    entrypoint: [""]
-  stage: syft_sbom
-  script:
-    - syft dir:. -o spdx-json > sbom.spdx.json
-  artifacts:
-    paths:
-      - sbom.spdx.json
-  when: always
-  allow_failure: true
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+# syft_sbom:
+#   image:
+#     name: anchore/syft:latest
+#     entrypoint: [""]
+#   stage: syft_sbom
+#   script:
+#     - syft dir:. -o spdx-json > sbom.spdx.json
+#   artifacts:
+#     paths:
+#       - sbom.spdx.json
+#   when: always
+#   allow_failure: true
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "main"'
 
 # ---- GRYPE SCAN ----
 # This job runs the Grype vulnerability scanner against the SBOM generated by Syft.
-grype_scan:
-  image:
-    name: anchore/grype:latest
-    entrypoint: [""]
-  stage: grype_scan
-  script:
-    - grype sbom:sbom.spdx.json --fail-on high
+# grype_scan:
+#   image:
+#     name: anchore/grype:latest
+#     entrypoint: [""]
+#   stage: grype_scan
+#   script:
+#     - grype sbom:sbom.spdx.json --fail-on high
 
 # ---- DEPLOY IMAGE ----
-deploy_image:
-    stage: deploy_image
-    image: docker:latest
-    services:
-        - docker:dind
-    script:
-        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-        - docker push $DOCKER_IMAGE
-    only:
-        - main
+# deploy_image:
+#     stage: deploy_image
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     script:
+#         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#         - docker push $DOCKER_IMAGE
+#     only:
+#         - main
 
 # ---- UPDATE MANIFEST REPO ----
-update_manifest_repo:
-  stage: update-k8s-manifest
-  image: alpine/git
-  needs:
-    - update_manifest_repo
-  script:
-    - apk add --no-cache git
-    - git config --global user.email "ci-bot@example.com"
-    - git config --global user.name "CI Bot"
-    - git clone https://gitlab.com/your-group/k8s-manifest-repo.git
-    - cd k8s-manifest-repo
-    # e.g., update image tag in deployment.yaml
-    - sed -i "s|image: your-image:.*|image: your-image:$CI_COMMIT_SHORT_SHA|" deployment.yaml
-    - git add deployment.yaml
-    - git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
-    - git push https://$CI_JOB_TOKEN@gitlab.com/your-group/k8s-manifest-repo.git HEAD:main
-  only:
-    - main
-  when: on_success
+# update_manifest_repo:
+#   stage: update-k8s-manifest
+#   image: alpine/git
+#   needs:
+#     - update_manifest_repo
+#   script:
+#     - apk add --no-cache git
+#     - git config --global user.email "ci-bot@example.com"
+#     - git config --global user.name "CI Bot"
+#     - git clone https://gitlab.com/your-group/k8s-manifest-repo.git
+#     - cd k8s-manifest-repo
+#     # e.g., update image tag in deployment.yaml
+#     - sed -i "s|image: your-image:.*|image: your-image:$CI_COMMIT_SHORT_SHA|" deployment.yaml
+#     - git add deployment.yaml
+#     - git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
+#     - git push https://$CI_JOB_TOKEN@gitlab.com/your-group/k8s-manifest-repo.git HEAD:main
+#   only:
+#     - main
+#   when: on_success
 
 # ---- SLACK NOTIFY ----
-slack_notify:
-    stage: slack_notify
-    script:
-        - curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
-    when: always
+# slack_notify:
+#     stage: slack_notify
+#     script:
+#         - curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
+#     when: always
 # build:
 #     stage: build
 #     script:
 #         - echo 'build'
 
 # --- Clean up ---
-clean_up:
-  stage: clean_up
-  script:
-    - echo "Cleaning up temporary files"
-    - rm -rf node_modules/
-  when: always
-  allow_failure: true
+# clean_up:
+#   stage: clean_up
+#   script:
+#     - echo "Cleaning up temporary files"
+#     - rm -rf node_modules/
+#   when: always
+#   allow_failure: true
 
 # # ---- BUILD ----
 # build:
