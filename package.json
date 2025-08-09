@@ -13,11 +13,13 @@
     "playwright": "playwright test",
     "playwright:ui": "playwright test --ui",
     "prepare": "husky",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "check-gitleaks": "gitleaks detect --source . --exit-code 1 --no-git --redact -r a.json"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "npm run lint"
+      "npm run lint",
+      "npm run check-gitleaks"
     ]
   },
   "dependencies": {

@@ -1,17 +1,25 @@
 stages:
-  - gitleaks_scan
-  # - dependency_audit
+  - prepare
+  # SAST_SCANS
+  # - gitleaks_scan
+  # - eslint
+  # - npm_audit
   # - dependency_check
   # - sonarcloud-check
-  # - prepare
+  # TESTS
   # - test
+  # BUILD_IMAGE
   # - build_image
+  # SBOM_SCANS
+  # - syft_sbom
+  # - grype_scan
+  # DAST_SCANS
   # - trivy_scan
   # - owap_zap
   # - snyk_scan
+
   # - run_app
-  # - syft_sbom
-  # - grype_scan
+
   # - deploy_image
   # - update-k8s-manifest
   # - slack_notify
@@ -23,6 +31,18 @@ cache:
   paths:
     - node_modules/
 
+# ---- PREPARE ----
+install_dependencies:
+  stage: prepare
+  script:
+    - npm ci --ignore-scripts
+    - npm run dev & # Start the app in the background
+    - sleep 10 # Wait for the app to start (optional, adjust as needed
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
   stage: gitleaks_scan
@@ -31,7 +51,7 @@ gitleaks_scan:
     entrypoint: [""]
 
   script:
-    - gitleaks detect --source . --exit-code 1 --no-git --redact
+    - gitleaks detect --source . --exit-code 1 --no-git --redact --report gitleaks-report.json
   artifacts:
     paths:
       - gitleaks-report.json
@@ -41,30 +61,38 @@ gitleaks_scan:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
+# ---- ESLINT ----
+eslint:
+  stage: eslint
+  script:
+    - npm run lint
+  when: always
+
+
 # ---- DEPENDENCY AUDIT ----
-# dependency_audit:
-#     stage: dependency_audit
-#     script:
-#         - npm audit --audit-level=moderate
-#     allow_failure: false
+npm_audit:
+    stage: npm_audit
+    script:
+        - npm audit --audit-level=moderate
+    allow_failure: false
 
 
 # -- DEPENDENCY CHECK ----
 # This job runs the OWASP Dependency Check tool to scan for vulnerabilities in dependencies.
-# dependency_check:
-#   image:
-#     name: owasp/dependency-check:latest
-#     entrypoint: [""]
-#   stage: dependency_check
-#   script:
-#     - mkdir -p dependency-check-report
-#     - ls
-#     - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
-#     - ls -R dependency-check-report
-#   artifacts:
-#     paths:
-#       - dependency-check-report/
-#     when: always
+dependency_check:
+  image:
+    name: owasp/dependency-check:latest
+    entrypoint: [""]
+  stage: dependency_check
+  script:
+    - mkdir -p dependency-check-report
+    - ls
+    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+    - ls -R dependency-check-report
+  artifacts:
+    paths:
+      - dependency-check-report/
+    when: always
 
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
@@ -87,33 +115,23 @@ gitleaks_scan:
 #     - merge_requests
 #     - main
 
-# ---- PREPARE ----
-# install_dependencies:
-#   stage: prepare
-#   script:
-#     - npm ci --ignore-scripts
-    # - npm run dev & # Start the app in the background
-    # - sleep 10 # Wait for the app to start (optional, adjust as needed
-  # artifacts:
-  #   paths:
-  #     - node_modules/
-  #   expire_in: 1 hour
+
 
 # ---- TEST ----
-# unit_test:
-#   stage: test
-#   script:
-#     - npm run test
-#   needs: [install_dependencies]
+unit_test:
+  stage: test
+  script:
+    - npm run test
+  needs: [install_dependencies]
 
-# playwright_test:
-#   stage: test
-#   image: mcr.microsoft.com/playwright:v1.54.0-noble
-#   script:
-#     - npm run playwright
-#   needs: [install_dependencies]
-#   rules:
-#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+playwright_test:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.54.0-noble
+  script:
+    - npm run playwright
+  needs: [install_dependencies]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
 # ---- SNYK SCAN ----
 # This job runs the Snyk security scanner against the project.
@@ -135,22 +153,17 @@ gitleaks_scan:
 #     allow_failure: true # Optional: avoid blocking MR if test fails
 
 # ---- BUILD IMAGE ----
-# docker_build:
-#     stage: build_image
-#     image: docker:latest
-#     services:
-#         - docker:dind
-#     script:
-#         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-#         - echo "trivy"
-#         # Scan the local image before pushing
-#         - apk add --no-cache curl  # Alpine needed to download Trivy
-#         - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-#         - trivy image --exit-code 1 --severity HIGH,CRITICAL myimage:local
-#         # If scan passed, tag & push
-#         - docker build -t $DOCKER_IMAGE .
-#     only:
-#         - main
+docker_build:
+    stage: build_image
+    image: docker:latest
+    services:
+        - docker:dind
+    script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+        # Scan the local image before pushing
+        - docker build -t $DOCKER_IMAGE .
+    only:
+        - main
 
 # ---- TRIVY SCAN ----
 # This job runs the Trivy security scanner against the Docker image and filesystem.
