@@ -46,6 +46,13 @@ install_dependencies:
       - node_modules/
     expire_in: 1 hour
 
+# ---- ESLINT ----
+eslint:
+  stage: sast_scan
+  script:
+    - npm run lint
+  when: always
+
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
   stage: sast_scan
@@ -66,12 +73,7 @@ gitleaks_scan:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-# ---- ESLINT ----
-eslint:
-  stage: sast_scan
-  script:
-    - npm run lint
-  when: always
+
 
 
 # ---- DEPENDENCY AUDIT ----
@@ -127,12 +129,14 @@ unit_test:
   stage: test
   script:
     - npm run test
+  needs: [install_dependencies]
 
 playwright_test:
   stage: test
   image: mcr.microsoft.com/playwright:v1.54.0-noble
   script:
     - npm run playwright
+  needs: [install_dependencies]
 #   rules:
 #     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
