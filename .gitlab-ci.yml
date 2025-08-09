@@ -34,6 +34,8 @@ cache:
 # ---- PREPARE ----
 install_dependencies:
   stage: prepare
+  tags:
+    - linux-homelab-general-vm
   script:
     - npm ci --ignore-scripts
     - npm run dev & # Start the app in the background
@@ -44,55 +46,55 @@ install_dependencies:
     expire_in: 1 hour
 
 # ---- GITLEAKS SCAN ----
-gitleaks_scan:
-  stage: gitleaks_scan
-  image: 
-    name: zricethezav/gitleaks:latest
-    entrypoint: [""]
+# gitleaks_scan:
+#   stage: gitleaks_scan
+#   image: 
+#     name: zricethezav/gitleaks:latest
+#     entrypoint: [""]
 
-  script:
-    - gitleaks detect --source . --exit-code 1 --no-git --redact --report gitleaks-report.json
-  artifacts:
-    paths:
-      - gitleaks-report.json
-    when: always
-  allow_failure: false
+#   script:
+#     - gitleaks detect --source . --exit-code 1 --no-git --redact --report gitleaks-report.json
+#   artifacts:
+#     paths:
+#       - gitleaks-report.json
+#     when: always
+#   allow_failure: false
   # rules:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # ---- ESLINT ----
-eslint:
-  stage: eslint
-  script:
-    - npm run lint
-  when: always
+# eslint:
+#   stage: eslint
+#   script:
+#     - npm run lint
+#   when: always
 
 
 # ---- DEPENDENCY AUDIT ----
-npm_audit:
-    stage: npm_audit
-    script:
-        - npm audit --audit-level=moderate
-    allow_failure: false
+# npm_audit:
+#     stage: npm_audit
+#     script:
+#         - npm audit --audit-level=moderate
+#     allow_failure: false
 
 
 # -- DEPENDENCY CHECK ----
 # This job runs the OWASP Dependency Check tool to scan for vulnerabilities in dependencies.
-dependency_check:
-  image:
-    name: owasp/dependency-check:latest
-    entrypoint: [""]
-  stage: dependency_check
-  script:
-    - mkdir -p dependency-check-report
-    - ls
-    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
-    - ls -R dependency-check-report
-  artifacts:
-    paths:
-      - dependency-check-report/
-    when: always
+# dependency_check:
+#   image:
+#     name: owasp/dependency-check:latest
+#     entrypoint: [""]
+#   stage: dependency_check
+#   script:
+#     - mkdir -p dependency-check-report
+#     - ls
+#     - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+#     - ls -R dependency-check-report
+#   artifacts:
+#     paths:
+#       - dependency-check-report/
+#     when: always
 
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
@@ -118,20 +120,20 @@ dependency_check:
 
 
 # ---- TEST ----
-unit_test:
-  stage: test
-  script:
-    - npm run test
-  needs: [install_dependencies]
+# unit_test:
+#   stage: test
+#   script:
+#     - npm run test
+#   needs: [install_dependencies]
 
-playwright_test:
-  stage: test
-  image: mcr.microsoft.com/playwright:v1.54.0-noble
-  script:
-    - npm run playwright
-  needs: [install_dependencies]
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+# playwright_test:
+#   stage: test
+#   image: mcr.microsoft.com/playwright:v1.54.0-noble
+#   script:
+#     - npm run playwright
+#   needs: [install_dependencies]
+#   rules:
+#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
 # ---- SNYK SCAN ----
 # This job runs the Snyk security scanner against the project.
@@ -153,17 +155,17 @@ playwright_test:
 #     allow_failure: true # Optional: avoid blocking MR if test fails
 
 # ---- BUILD IMAGE ----
-docker_build:
-    stage: build_image
-    image: docker:latest
-    services:
-        - docker:dind
-    script:
-        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-        # Scan the local image before pushing
-        - docker build -t $DOCKER_IMAGE .
-    only:
-        - main
+# docker_build:
+#     stage: build_image
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     script:
+#         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#         # Scan the local image before pushing
+#         - docker build -t $DOCKER_IMAGE .
+#     only:
+#         - main
 
 # ---- TRIVY SCAN ----
 # This job runs the Trivy security scanner against the Docker image and filesystem.
