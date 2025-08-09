@@ -1,5 +1,6 @@
 stages:
   - prepare
+  - sast_scan
   # SAST_SCANS
   # - gitleaks_scan
   # - eslint
@@ -34,8 +35,6 @@ cache:
 # ---- PREPARE ----
 install_dependencies:
   stage: prepare
-  tags:
-    - linux-homelab-general-vm
   script:
     - npm ci --ignore-scripts
     # - npm run dev & # Start the app in the background
@@ -46,19 +45,19 @@ install_dependencies:
     expire_in: 1 hour
 
 # ---- GITLEAKS SCAN ----
-# gitleaks_scan:
-#   stage: gitleaks_scan
-#   image: 
-#     name: zricethezav/gitleaks:latest
-#     entrypoint: [""]
+gitleaks_scan:
+  stage: sast_scan
+  image: 
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
 
-#   script:
-#     - gitleaks detect --source . --exit-code 1 --no-git --redact --report gitleaks-report.json
-#   artifacts:
-#     paths:
-#       - gitleaks-report.json
-#     when: always
-#   allow_failure: false
+  script:
+    - gitleaks detect --source . --exit-code 1 --no-git --redact --report gitleaks-report.json
+  artifacts:
+    paths:
+      - gitleaks-report.json
+    when: always
+  allow_failure: false
   # rules:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
