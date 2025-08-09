@@ -38,8 +38,8 @@ install_dependencies:
     - linux-homelab-general-vm
   script:
     - npm ci --ignore-scripts
-    - npm run dev & # Start the app in the background
-    - sleep 10 # Wait for the app to start (optional, adjust as needed
+    # - npm run dev & # Start the app in the background
+    # - sleep 10 # Wait for the app to start (optional, adjust as needed
   artifacts:
     paths:
       - node_modules/
