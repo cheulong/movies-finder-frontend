@@ -134,6 +134,8 @@ unit_test:
 playwright_test:
   stage: test
   image: mcr.microsoft.com/playwright:v1.54.0-noble
+  before_script:
+    - npx playwright install chrome
   script:
     - npm run playwright
   needs: [install_dependencies]
