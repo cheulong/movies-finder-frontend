@@ -35,6 +35,8 @@ cache:
 # ---- PREPARE ----
 install_dependencies:
   stage: prepare
+  tags:
+    - linux-homelab-general-vm
   script:
     - npm ci --ignore-scripts
     # - npm run dev & # Start the app in the background
@@ -47,12 +49,14 @@ install_dependencies:
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
   stage: sast_scan
+  tags:
+    - linux-homelab-general-vm
   image: 
     name: zricethezav/gitleaks:latest
     entrypoint: [""]
 
   script:
-    - gitleaks detect --source . --exit-code 1 --no-git --redact --report gitleaks-report.json
+    - gitleaks detect --source . --exit-code 1 --no-git --redact --report-path gitleaks-report.json
   artifacts:
     paths:
       - gitleaks-report.json
