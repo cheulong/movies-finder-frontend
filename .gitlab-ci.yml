@@ -8,7 +8,7 @@ stages:
   # - dependency_check
   # - sonarcloud-check
   # TESTS
-  # - test
+  - test
   # BUILD_IMAGE
   # - build_image
   # SBOM_SCANS
@@ -67,19 +67,19 @@ gitleaks_scan:
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # ---- ESLINT ----
-# eslint:
-#   stage: eslint
-#   script:
-#     - npm run lint
-#   when: always
+eslint:
+  stage: sast_scan
+  script:
+    - npm run lint
+  when: always
 
 
 # ---- DEPENDENCY AUDIT ----
-# npm_audit:
-#     stage: npm_audit
-#     script:
-#         - npm audit --audit-level=moderate
-#     allow_failure: false
+npm_audit:
+    stage: sast_scan
+    script:
+        - npm audit --audit-level=moderate
+    allow_failure: false
 
 
 # -- DEPENDENCY CHECK ----
@@ -104,18 +104,18 @@ gitleaks_scan:
 # to be set in the CI/CD settings of your project.
 # The `sonarcloud-check` job is paused for now, as per the TODO comment
 # TODO: pause for now
-# sonarcloud-check:
-#   image:
-#     name: sonarsource/sonar-scanner-cli:latest
-#     entrypoint: [""]
-#   cache:
-#     key: "${CI_JOB_NAME}"
-#     paths:
-#       - .sonar/cache
-#   stage: sonarcloud-check
-#   script:
-#     - echo 'sonarqube'
-#     - sonar-scanner
+sonarcloud-check:
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  stage: sast_scan
+  script:
+    - echo 'sonarqube'
+    - sonar-scanner
 #   only:
 #     - merge_requests
 #     - main
@@ -123,18 +123,16 @@ gitleaks_scan:
 
 
 # ---- TEST ----
-# unit_test:
-#   stage: test
-#   script:
-#     - npm run test
-#   needs: [install_dependencies]
+unit_test:
+  stage: test
+  script:
+    - npm run test
 
-# playwright_test:
-#   stage: test
-#   image: mcr.microsoft.com/playwright:v1.54.0-noble
-#   script:
-#     - npm run playwright
-#   needs: [install_dependencies]
+playwright_test:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.54.0-noble
+  script:
+    - npm run playwright
 #   rules:
 #     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
