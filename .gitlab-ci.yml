@@ -16,12 +16,13 @@ stages:
   # - syft_sbom
   # - grype_scan
   # DAST_SCANS
+  - run_app
+
   - dast_scan
   # - trivy_scan
   # - owap_zap
   # - snyk_scan
 
-  # - run_app
 
   # - deploy_image
   # - update-k8s-manifest
