@@ -238,11 +238,11 @@ owap_zap:
         # api scan: zap-api-scan.py
     needs:
       - job: run_app
-    artifacts:
-        expire_in: "30 days"
-        when: always
-        paths:
-          - zap-report.html
+    # artifacts:
+    #     expire_in: "30 days"
+    #     when: always
+    #     paths:
+    #       - zap-report.html
     # only:
     # - main
 
