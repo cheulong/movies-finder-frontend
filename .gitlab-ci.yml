@@ -216,8 +216,9 @@ trivy_scan:
 # This job generates a Software Bill of Materials (SBOM) using Syft.
 syft_sbom:
   image:
-    name: anchore/syft:latest
+    name: registry.gitlab.com/gitlab-ci-utils/container-images/syft:latest
     entrypoint: [""]
+
   stage: security
   variables:
     DOCKER_NAME: 'cheulong/movies-finder-frontend'
