@@ -232,6 +232,7 @@ owap_zap:
         # - curl http://127.0.0.1:80/ # Ensure the app is running
         - zap-baseline.py -t http://app:80 -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
+        - ls
         # full scan: zap-full-scan.py
         # api scan: zap-api-scan.py
     needs:
