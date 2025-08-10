@@ -7,8 +7,7 @@ stages:
   # - dast_scan
   # - deploy
   - update-deployment-manifest
-  # - update-k8s-manifest
-  # - slack_notify
+  - slack_notify
   - clean_up
 
 image: node:23-bookworm-slim
@@ -292,17 +291,17 @@ update_manifest_repo:
                   git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
                   git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
                 fi
-
 #   only:
 #     - main
 #   when: on_success
 
 # ---- SLACK NOTIFY ----
-# slack_notify:
-#     stage: slack_notify
-#     script:
-#         - curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
-#     when: always
+slack_notify:
+    stage: slack_notify
+    script:
+      - |
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
+    # when: always
 # build:
 #     stage: build
 #     script:
@@ -321,124 +320,3 @@ clean_up:
     - rm -rf node_modules/
   when: always
   allow_failure: true
-
-# # ---- BUILD ----
-# build:
-#     stage: build
-#     image: node:20
-#     script:
-#         - npm run build
-#     needs: [install_dependencies]
-#     artifacts:
-#         paths:
-#             - dist/
-#         expire_in: 1 hour
-
-# ---- SECURITY ----
-# owap_zap:
-#     stage: security
-#     image: zaproxy/zap-stable
-#     allow_failure: true
-#     before_script:
-#     - mkdir -p /zap/wrk
-#     script:
-        
-#         - echo 'owap zap'
-#         - zap-baseline.py -t http://172.0.0.1:5173/ -g gen.conf -r zap-report.html
-#         - cp /zap/wrk/zap-report.html .
-        # full scan: zap-full-scan.py
-        # api scan: zap-api-scan.py
-    # needs:
-    #   - job: install_dependencies
-    # artifacts:
-    #     expire_in: "30 days"
-    #     when: always
-    #     reports:
-    #       dast: zap-report.html
-    #     paths:
-    #       - zap-report.html
-    # only:
-    # - main
-
-
-
-
-
-
-
-
-
-
-# deploy_staging:
-#     stage: deploy
-#     script:
-#         - echo "Deploying to staging"
-#         - kubectl set image deployment/node-app node=$DOCKER_IMAGE --record
-#     environment:
-#         name: staging
-#         url: https://staging.example.com
-#     only:
-#         - main
-#     when: manual # Optional approval step
-
-# deploy_prod:
-#     stage: deploy
-#     script:
-#         - echo "Deploying to production"
-#         - kubectl set image deployment/node-app node=$DOCKER_IMAGE --record
-#     environment:
-#         name: production
-#         url: https://example.com
-#     only:
-#         - tags
-#     when: manual
-
-
-
-# # unit_test:
-# #     stage: test
-# #     script:
-# #         - echo 'test'
-
-# # build_image:
-# #     stage: package
-# #     script:
-# #         - echo 'build image'
-
-# # trivy:
-# #     stage: package
-# #     script:
-# #         - echo 'scan image'
-# #     needs:
-# #         - job: build_image
-
-# # deploy_dev:
-# #     stage: deploy_dev
-# #     script:
-# #         - echo "dev"
-# #         - mkdir build
-# #     environment: dev
-# #     artifacts:
-# #         paths:
-# #             - build/
-# #         expire_in: 2 weeks
-# #     only:
-# #         - main
-# #         - tags
-
-# # deploy_staging:
-# #     stage: deploy_staging
-# #     script: echo "staging"
-# #     environment: staging
-# #     when: manual
-# #     only:
-# #         - main
-
-# # deploy_prod:
-# #     stage: deploy_prod
-# #     script: echo "prod"
-# #     environment: prod
-# #     when: manual
-# #     only:
-# #         - main
-
