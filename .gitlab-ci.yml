@@ -9,7 +9,7 @@ stages:
   # - update-deployment-manifest
   # - update-k8s-manifest
   # - slack_notify
-  # - clean_up
+  - clean_up
 
 image: node:23-bookworm-slim
 
@@ -212,7 +212,7 @@ run_app:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:e4ac7b2b
   script:
-    - docker run --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
+    - docker run app --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
     - sleep 15  # wait for app to start
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
@@ -300,13 +300,18 @@ owap_zap:
 #         - echo 'build'
 
 # --- Clean up ---
-# clean_up:
-#   stage: clean_up
-#   script:
-#     - echo "Cleaning up temporary files"
-#     - rm -rf node_modules/
-#   when: always
-#   allow_failure: true
+clean_up:
+  stage: clean_up
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Stop docker container"
+    - docker stop app || true
+    - echo "Cleaning up temporary files"
+    - rm -rf node_modules/
+  when: always
+  allow_failure: true
 
 # # ---- BUILD ----
 # build:
