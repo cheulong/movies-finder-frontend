@@ -198,6 +198,8 @@ run_app:
   # needs:
   #   - job: docker_build
   variables:
+    DOCKER_NAME: 'cheulong/movies-finder-frontend'
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE
     DOCKER_TAG: $CI_COMMIT_SHORT_SHA
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
