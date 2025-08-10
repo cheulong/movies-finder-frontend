@@ -193,8 +193,12 @@ install_dependencies:
 # This job runs the application using Docker Compose.
 run_app:
   stage: dast_scan
+  services:
+    # Run your application Docker image as a service
+    - name: $DOCKER_IMAGE:e4ac7b2b
+      alias: app # Alias 'app' allows ZAP to access it via 'http://app:80'
   image:
-    name: docker:latest
+    name: alpine/git
   # needs:
   #   - job: docker_build
   variables:
@@ -203,27 +207,38 @@ run_app:
     DOCKER_TAG: $CI_COMMIT_SHORT_SHA
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
-  services:
-        - docker:dind
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-    - docker pull $DOCKER_IMAGE:e4ac7b2b
+  # before_script:
+  #   - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  #   - docker pull $DOCKER_IMAGE:e4ac7b2b
   script:
-    - docker run --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
-    - sleep 15  # wait for app to start
-
+      - echo "Application is running at http://app:80"
+      # Keep the service alive long enough for ZAP to scan
+      - echo "Waiting for application to be ready..."
+      # A simple health check (replace with a more robust one if needed for your app)
+      - wget --retry-connrefused --tries=20 --wait=3 --output-document=/dev/null http://app:80
+      - echo "Application is ready. Proceeding to security scan..."
+      # This job effectively just ensures the app is up and available for the next stage
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
 owap_zap:
     stage: dast_scan
     image: zaproxy/zap-stable
     allow_failure: true
+    variables:
+      DOCKER_NAME: 'cheulong/movies-finder-frontend'
+      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_TLS_CERTDIR: ""
     before_script:
     - mkdir -p /zap/wrk
+    services:
+    # Run your application Docker image as a service
+    - name: $DOCKER_IMAGE:e4ac7b2b
+      alias: app # Alias 'app' allows ZAP to access it via 'http://app:80'
     script:
         - echo 'owap zap'
-        - curl http://127.0.0.1:80/ # Ensure the app is running
-        - zap-baseline.py -t http://127.0.0.1:80/ -g gen.conf -r zap-report.html
+        - zap-baseline.py -t http://app:80 -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-api-scan.py
