@@ -241,8 +241,6 @@ owap_zap:
     artifacts:
         expire_in: "30 days"
         when: always
-        reports:
-          dast: zap-report.html
         paths:
           - zap-report.html
     # only:
