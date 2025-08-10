@@ -5,7 +5,7 @@ stages:
   - build
   - security
   - dast_scan
-  # - deploy
+  - deploy
   # - update-deployment-manifest
   # - update-k8s-manifest
   # - slack_notify
