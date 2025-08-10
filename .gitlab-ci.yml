@@ -1,33 +1,33 @@
 stages:
-  - prepare
-  - sast_scan
-  - test
-  - build
-  - security
-  - dast_scan
-  - deploy
-  # - update-deployment-manifest
+  # - prepare
+  # - sast_scan
+  # - test
+  # - build
+  # - security
+  # - dast_scan
+  # - deploy
+  - update-deployment-manifest
   # - update-k8s-manifest
   # - slack_notify
   - clean_up
 
 image: node:23-bookworm-slim
 
-cache:
-  paths:
-    - node_modules/
+# cache:
+#   paths:
+#     - node_modules/
 
 # ---- PREPARE ----
-install_dependencies:
-  stage: prepare
-  tags:
-    - linux-homelab-general-vm
-  script:
-    - npm ci --ignore-scripts
-  artifacts:
-    paths:
-      - node_modules/
-    expire_in: 1 hour
+# install_dependencies:
+#   stage: prepare
+#   tags:
+#     - linux-homelab-general-vm
+#   script:
+#     - npm ci --ignore-scripts
+#   artifacts:
+#     paths:
+#       - node_modules/
+#     expire_in: 1 hour
 
 # ---- ESLINT ----
 # eslint:
@@ -103,22 +103,22 @@ install_dependencies:
 #     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
 # ---- BUILD IMAGE ----
-docker_build:
-    stage: build
-    image: docker:latest
-    services:
-        - docker:dind
-    variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-      DOCKER_HOST: tcp://docker:2375
-      DOCKER_TLS_CERTDIR: ""
-    script:
-      - docker info  # check connection
-      - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-      - docker build -f Dockerfile.prod -t $DOCKER_IMAGE:$DOCKER_TAG .
-      - docker push $DOCKER_IMAGE:$DOCKER_TAG
+# docker_build:
+#     stage: build
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     variables:
+#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+#       DOCKER_HOST: tcp://docker:2375
+#       DOCKER_TLS_CERTDIR: ""
+#     script:
+#       - docker info  # check connection
+#       - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+#       - docker build -f Dockerfile.prod -t $DOCKER_IMAGE:$DOCKER_TAG .
+#       - docker push $DOCKER_IMAGE:$DOCKER_TAG
     # only:
     #     - main
 
@@ -191,29 +191,29 @@ docker_build:
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
-run_app:
-  stage: dast_scan
-  image:
-    name: docker:latest
+# run_app:
+#   stage: dast_scan
+#   image:
+#     name: docker:latest
   # needs:
   #   - job: docker_build
-  variables:
-    DOCKER_NAME: 'cheulong/movies-finder-frontend'
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-    DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
-  services:
-    - name: docker:dind
-      alias: docker
+  # variables:
+  #   DOCKER_NAME: 'cheulong/movies-finder-frontend'
+  #   DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+  #   DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+  #   DOCKER_HOST: tcp://docker:2375
+  #   DOCKER_TLS_CERTDIR: ""
+  #   DOCKER_DRIVER: overlay2
+  # services:
+  #   - name: docker:dind
+  #     alias: docker
 
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-  script:
-    - docker run --name app --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
-    - sleep 15  # wait for app to start
+  # before_script:
+  #   - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  #   - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+  # script:
+  #   - docker run --name app --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
+  #   - sleep 15  # wait for app to start
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
 # owap_zap:
@@ -247,43 +247,43 @@ run_app:
 
 
 # ---- DEPLOY IMAGE ----
-deploy_image:
-    stage: deploy
-    image: docker:latest
-    services:
-        - docker:dind
-    variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-      DOCKER_HOST: tcp://docker:2375
-      DOCKER_TLS_CERTDIR: ""
-    script:
-        - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-        - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-        - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_NAME:latest
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - docker push $DOCKER_NAME:latest
+# deploy_image:
+#     stage: deploy
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     variables:
+#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+#       DOCKER_HOST: tcp://docker:2375
+#       DOCKER_TLS_CERTDIR: ""
+#     script:
+#         - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+#         - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+#         - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_NAME:latest
+#         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#         - docker push $DOCKER_NAME:latest
 #     only:
 #         - main
 
 # ---- UPDATE MANIFEST REPO ----
-# update_manifest_repo:
-#   stage: update-deployment-manifest
-#   image: alpine/git
+update_manifest_repo:
+  stage: update-deployment-manifest
+  image: alpine/git
 #   needs:
 #     - update_manifest_repo
-#   script:
-#     - apk add --no-cache git
-#     - git config --global user.email "ci-bot@example.com"
-#     - git config --global user.name "CI Bot"
-#     - git clone https://gitlab.com/your-group/k8s-manifest-repo.git
-#     - cd k8s-manifest-repo
+  script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "GitLab CI"
+    - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+    - cd movies-finder-deployment/web-app
+    - "sed -i 's|tag:.*|tag: $CI_COMMIT_SHORT_SHA|' values.yaml"
 #     # e.g., update image tag in deployment.yaml
 #     - sed -i "s|image: your-image:.*|image: your-image:$CI_COMMIT_SHORT_SHA|" deployment.yaml
-#     - git add deployment.yaml
-#     - git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
-#     - git push https://$CI_JOB_TOKEN@gitlab.com/your-group/k8s-manifest-repo.git HEAD:main
+    - git add .
+    - git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
+    - git push https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
 #   only:
 #     - main
 #   when: on_success
