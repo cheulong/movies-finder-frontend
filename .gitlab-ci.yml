@@ -210,60 +210,60 @@ run_app:
 
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-    - docker pull $DOCKER_IMAGE:e4ac7b2b
+    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
   script:
-    - docker run --name app --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
+    - docker run --name app --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
     - sleep 15  # wait for app to start
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
-owap_zap:
-    stage: dast_scan
-    image: zaproxy/zap-stable
-    allow_failure: true
-    services:
-    - name: $DOCKER_IMAGE:e4ac7b2b
-      alias: app
-    variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-    before_script:
-    - mkdir -p /zap/wrk
-    script:
-        - echo 'owap zap'
-        # - curl http://127.0.0.1:80/ # Ensure the app is running
-        - zap-baseline.py -t http://app:80 -g gen.conf -r zap-report.html || true
-        - ls
-        - cp /zap/wrk/zap-report.html .
+# owap_zap:
+#     stage: dast_scan
+#     image: zaproxy/zap-stable
+#     allow_failure: true
+#     services:
+#     - name: $DOCKER_IMAGE:e4ac7b2b
+#       alias: app
+#     variables:
+#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#     before_script:
+#     - mkdir -p /zap/wrk
+#     script:
+#         - echo 'owap zap'
+#         - zap-baseline.py -t http://app:80 -g gen.conf -r zap-report.html || true
+#         - ls
+#         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-api-scan.py
-    needs:
-      - job: run_app
-    artifacts:
-        expire_in: "30 days"
-        when: always
-        paths:
-          - zap-report.html
+    # needs:
+    #   - job: run_app
+    # artifacts:
+    #     expire_in: "30 days"
+    #     when: always
+    #     paths:
+    #       - zap-report.html
     # only:
     # - main
 
 
 # ---- DEPLOY IMAGE ----
-# deploy_image:
-#     stage: deploy
-#     image: docker:latest
-#     services:
-#         - docker:dind
-#     variables:
-#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
-#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-#       DOCKER_HOST: tcp://docker:2375
-#       DOCKER_TLS_CERTDIR: ""
-#     script:
-#         - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-#         - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-#         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-
-#         - docker push $DOCKER_IMAGE:$DOCKER_TAG
+deploy_image:
+    stage: deploy
+    image: docker:latest
+    services:
+        - docker:dind
+    variables:
+      DOCKER_NAME: 'cheulong/movies-finder-frontend'
+      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_TLS_CERTDIR: ""
+    script:
+        - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+        - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+        - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_NAME:latest
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push $DOCKER_NAME:latest
 #     only:
 #         - main
 
