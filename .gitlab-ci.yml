@@ -1,31 +1,12 @@
 stages:
   - prepare
   - sast_scan
-  # SAST_SCANS
-  # - gitleaks_scan
-  # - eslint
-  # - npm_audit
-  # - dependency_check
-  # - sonarcloud-check
-  # TESTS
   - test
-  # BUILD_IMAGE
   - build
   - security
-  # SBOM_SCANS
-  # - syft_sbom
-  # - grype_scan
-  # DAST_SCANS
-  - run_app
-
   - dast_scan
-  # - trivy_scan
-  # - owap_zap
-  # - snyk_scan
-  - update-deployment-manifest
-
-
-  - deploy
+  # - deploy
+  # - update-deployment-manifest
   # - update-k8s-manifest
   # - slack_notify
   # - clean_up
@@ -43,8 +24,6 @@ install_dependencies:
     - linux-homelab-general-vm
   script:
     - npm ci --ignore-scripts
-    # - npm run dev & # Start the app in the background
-    # - sleep 10 # Wait for the app to start (optional, adjust as needed
   artifacts:
     paths:
       - node_modules/
@@ -65,7 +44,6 @@ gitleaks_scan:
   image: 
     name: zricethezav/gitleaks:latest
     entrypoint: [""]
-
   script:
     - gitleaks detect --source . --exit-code 1 --no-git --redact --report-path gitleaks-report.json
   artifacts:
@@ -77,9 +55,6 @@ gitleaks_scan:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-
-
-
 # ---- DEPENDENCY AUDIT ----
 npm_audit:
     stage: sast_scan
@@ -87,29 +62,8 @@ npm_audit:
         - npm audit --audit-level=moderate
     allow_failure: false
 
-
-# -- DEPENDENCY CHECK ----
-# This job runs the OWASP Dependency Check tool to scan for vulnerabilities in dependencies.
-# dependency_check:
-#   image:
-#     name: owasp/dependency-check:latest
-#     entrypoint: [""]
-#   stage: dependency_check
-#   script:
-#     - mkdir -p dependency-check-report
-#     - ls
-#     - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
-#     - ls -R dependency-check-report
-#   artifacts:
-#     paths:
-#       - dependency-check-report/
-#     when: always
-
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
-# to be set in the CI/CD settings of your project.
-# The `sonarcloud-check` job is paused for now, as per the TODO comment
-# TODO: pause for now
 sonarcloud-check:
   image:
     name: sonarsource/sonar-scanner-cli:latest
@@ -125,8 +79,6 @@ sonarcloud-check:
 #   only:
 #     - merge_requests
 #     - main
-
-
 
 # ---- TEST ----
 unit_test:
@@ -147,28 +99,8 @@ playwright_test:
     when: always
     paths:
       - playwright-report/
-      
 #   rules:
 #     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
-
-# ---- SNYK SCAN ----
-# This job runs the Snyk security scanner against the project.
-# snyk_scan:
-#     image: 
-#       name: snyk/snyk:docker
-#       entrypoint: [""]
-#     stage: security
-#     script:
-#       - snyk auth $SNYK_TOKEN
-#       - snyk test --all-projects --json-file-output=report.json
-#     artifacts:
-#         paths:
-#           - report.json
-#         when: always
-#     only:
-#         - merge_requests
-#         - main
-#     allow_failure: true # Optional: avoid blocking MR if test fails
 
 # ---- BUILD IMAGE ----
 docker_build:
@@ -187,7 +119,6 @@ docker_build:
       - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
       - docker build -f Dockerfile.prod -t $DOCKER_IMAGE:$DOCKER_TAG .
       - docker push $DOCKER_IMAGE:$DOCKER_TAG
-
     # only:
     #     - main
 
@@ -204,8 +135,6 @@ trivy_scan:
       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
   script:
     - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json $DOCKER_IMAGE:$DOCKER_TAG
-    # - trivy fs --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json .
-    # - trivy config  --exit-code 1 --output trivy-report.json <my-docker-image:latest>
   allow_failure: false
   needs: [docker_build]
   # rules:
@@ -265,51 +194,51 @@ grype_scan:
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
-run_app:
-  stage: run_app
-  image:
-    name: docker:latest
-  needs:
-    - job: docker_build
-  variables:
-    DOCKER_NAME: 'cheulong/movies-finder-frontend'
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-    DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  services:
-        - docker:dind
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-  script:
-    - docker run --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
-    - sleep 15  # wait for app to start
+# run_app:
+#   stage: dast_scan
+#   image:
+#     name: docker:latest
+#   needs:
+#     - job: docker_build
+#   variables:
+#     DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#     DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#     DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+#     DOCKER_HOST: tcp://docker:2375
+#     DOCKER_TLS_CERTDIR: ""
+#   services:
+#         - docker:dind
+#   before_script:
+#     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+#     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+#   script:
+#     - docker run --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
+#     - sleep 15  # wait for app to start
 
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
-owap_zap:
-    stage: dast_scan
-    image: zaproxy/zap-stable
-    allow_failure: true
-    before_script:
-    - mkdir -p /zap/wrk
-    script:
-        - echo 'owap zap'
-        - curl http://127.0.0.1:80/ # Ensure the app is running
-        - zap-baseline.py -t http://127.0.0.1:80/ -g gen.conf -r zap-report.html
-        - cp /zap/wrk/zap-report.html .
-        # full scan: zap-full-scan.py
-        # api scan: zap-api-scan.py
-    needs:
-      - job: run_app
-    artifacts:
-        expire_in: "30 days"
-        when: always
-        reports:
-          dast: zap-report.html
-        paths:
-          - zap-report.html
+# owap_zap:
+#     stage: dast_scan
+#     image: zaproxy/zap-stable
+#     allow_failure: true
+#     before_script:
+#     - mkdir -p /zap/wrk
+#     script:
+#         - echo 'owap zap'
+#         - curl http://127.0.0.1:80/ # Ensure the app is running
+#         - zap-baseline.py -t http://127.0.0.1:80/ -g gen.conf -r zap-report.html
+#         - cp /zap/wrk/zap-report.html .
+#         # full scan: zap-full-scan.py
+#         # api scan: zap-api-scan.py
+#     needs:
+#       - job: run_app
+#     artifacts:
+#         expire_in: "30 days"
+#         when: always
+#         reports:
+#           dast: zap-report.html
+#         paths:
+#           - zap-report.html
     # only:
     # - main
 
