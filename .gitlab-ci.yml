@@ -213,7 +213,6 @@ run_app:
   script:
     - docker run --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
     - sleep 15  # wait for app to start
-    - curl http://localhost:80
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
 owap_zap:
