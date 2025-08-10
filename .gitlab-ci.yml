@@ -217,7 +217,6 @@ trivy_scan:
 syft_sbom:
   image:
     name: anchore/syft:latest
-    entrypoint: [""]
   stage: security
   variables:
     DOCKER_NAME: 'cheulong/movies-finder-frontend'
