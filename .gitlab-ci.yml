@@ -212,7 +212,7 @@ run_app:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:e4ac7b2b
   script:
-    - docker run app --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
+    - docker run --name app --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
     - sleep 15  # wait for app to start
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
