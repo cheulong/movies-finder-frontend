@@ -283,9 +283,16 @@ update_manifest_repo:
     - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
     - cd movies-finder-deployment/web-app
     - 'sed -i "s|tag:.*|tag: $CI_COMMIT_SHORT_SHA|" values.yaml'
-    - git add .
-    - git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
-    - git push https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+    - echo "Checking for changes..."
+    - |
+                if git diff --quiet; then
+                  echo "No changes to commit."
+                else
+                  git add .
+                  git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
+                  git push git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+                fi
+
 #   only:
 #     - main
 #   when: on_success
