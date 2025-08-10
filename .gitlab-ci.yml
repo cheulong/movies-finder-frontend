@@ -297,7 +297,11 @@ update_manifest_repo:
 
 # ---- SLACK NOTIFY ----
 slack_notify:
+    image:
+      name: alpine:latest
     stage: slack_notify
+    before_script:
+    - apk add --no-cache curl
     script:
       - |
           curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
