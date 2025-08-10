@@ -220,15 +220,23 @@ syft_sbom:
     entrypoint: [""]
   stage: security
   variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+    DOCKER_NAME: 'cheulong/movies-finder-frontend'
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+    DOCKER_TAG: $CI_COMMIT_SHORT_SHA
   needs: [docker_build]
+  services:
+    - docker:dind
+  before_script:
+    # Login to GitLab Container Registry to pull the image
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
   script:
     - syft image $DOCKER_IMAGE:$DOCKER_TAG -o spdx-json > sbom.spdx.json
+    - syft image $DOCKER_IMAGE:$DOCKER_TAG -o cyclonedx-json > sbom-cyclonedx.json
   artifacts:
     paths:
       - sbom.spdx.json
+      - sbom-cyclonedx.json
   when: always
   allow_failure: true
   # rules:
@@ -244,6 +252,7 @@ grype_scan:
   needs: [syft_sbom]
   script:
     - grype sbom:sbom.spdx.json --exit-code 1 --severity HIGH,CRITICAL
+    - grype sbom:sbom-cyclonedx.json --exit-code 1 --severity HIGH,CRITICAL
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
