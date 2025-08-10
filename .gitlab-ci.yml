@@ -240,11 +240,9 @@ syft_sbom:
   script:
     - syft --version
     - syft $DOCKER_IMAGE:$DOCKER_TAG -o spdx-json > sbom.spdx.json
-    - syft $DOCKER_IMAGE:$DOCKER_TAG -o cyclonedx-json > sbom-cyclonedx.json
   artifacts:
     paths:
       - sbom.spdx.json
-      - sbom-cyclonedx.json
   when: always
   allow_failure: true
   # rules:
@@ -264,7 +262,6 @@ grype_scan:
     - curl -sSfL https://get.anchore.io/grype | sh -s -- -b /usr/local/bin
   script:
     - grype sbom:sbom.spdx.json --fail-on high
-    - grype sbom:sbom-cyclonedx.json --fail-on high
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
@@ -299,8 +296,8 @@ owap_zap:
     - mkdir -p /zap/wrk
     script:
         - echo 'owap zap'
-        - curl http://172.0.0.1:80/ # Ensure the app is running
-        - zap-baseline.py -t http://172.0.0.1:80/ -g gen.conf -r zap-report.html
+        - curl http://127.0.0.1:80/ # Ensure the app is running
+        - zap-baseline.py -t http://127.0.0.1:80/ -g gen.conf -r zap-report.html
         - cp /zap/wrk/zap-report.html .
         # full scan: zap-full-scan.py
         # api scan: zap-api-scan.py
@@ -318,22 +315,22 @@ owap_zap:
 
 
 # ---- DEPLOY IMAGE ----
-deploy_image:
-    stage: deploy
-    image: docker:latest
-    services:
-        - docker:dind
-    variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-      DOCKER_HOST: tcp://docker:2375
-      DOCKER_TLS_CERTDIR: ""
-    script:
-        - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-        - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-
-        - docker push $DOCKER_IMAGE:$DOCKER_TAG
+# deploy_image:
+#     stage: deploy
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     variables:
+#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+#       DOCKER_HOST: tcp://docker:2375
+#       DOCKER_TLS_CERTDIR: ""
+#     script:
+#         - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+#         - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+#         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-
+#         - docker push $DOCKER_IMAGE:$DOCKER_TAG
 #     only:
 #         - main
 
