@@ -290,7 +290,7 @@ update_manifest_repo:
                 else
                   git add .
                   git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
-                  git push git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+                  git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
                 fi
 
 #   only:
