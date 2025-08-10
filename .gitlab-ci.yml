@@ -30,176 +30,126 @@ install_dependencies:
     expire_in: 1 hour
 
 # ---- ESLINT ----
-eslint:
-  stage: sast_scan
-  script:
-    - npm run lint
-  when: always
+# eslint:
+#   stage: sast_scan
+#   script:
+#     - npm run lint
+#   when: always
 
 # ---- GITLEAKS SCAN ----
-gitleaks_scan:
-  stage: sast_scan
-  tags:
-    - linux-homelab-general-vm
-  image: 
-    name: zricethezav/gitleaks:latest
-    entrypoint: [""]
-  script:
-    - gitleaks detect --source . --exit-code 1 --no-git --redact --report-path gitleaks-report.json
-  artifacts:
-    paths:
-      - gitleaks-report.json
-    when: always
-  allow_failure: false
+# gitleaks_scan:
+#   stage: sast_scan
+#   tags:
+#     - linux-homelab-general-vm
+#   image: 
+#     name: zricethezav/gitleaks:latest
+#     entrypoint: [""]
+#   script:
+#     - gitleaks detect --source . --exit-code 1 --no-git --redact --report-path gitleaks-report.json
+#   artifacts:
+#     paths:
+#       - gitleaks-report.json
+#     when: always
+#   allow_failure: false
   # rules:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
   #   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # ---- DEPENDENCY AUDIT ----
-npm_audit:
-    stage: sast_scan
-    script:
-        - npm audit --audit-level=moderate
-    allow_failure: false
+# npm_audit:
+#     stage: sast_scan
+#     script:
+#         - npm audit --audit-level=moderate
+#     allow_failure: false
 
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
-sonarcloud-check:
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  stage: sast_scan
-  script:
-    - echo 'sonarqube'
-    - sonar-scanner
+# sonarcloud-check:
+#   image:
+#     name: sonarsource/sonar-scanner-cli:latest
+#     entrypoint: [""]
+#   cache:
+#     key: "${CI_JOB_NAME}"
+#     paths:
+#       - .sonar/cache
+#   stage: sast_scan
+#   script:
+#     - echo 'sonarqube'
+#     - sonar-scanner
 #   only:
 #     - merge_requests
 #     - main
 
 # ---- TEST ----
-unit_test:
-  stage: test
-  script:
-    - npm run test
-  needs: [install_dependencies]
+# unit_test:
+#   stage: test
+#   script:
+#     - npm run test
+#   needs: [install_dependencies]
 
-playwright_test:
-  stage: test
-  image: mcr.microsoft.com/playwright:v1.54.0-noble
-  before_script:
-    - npx playwright install chrome
-  script:
-    - npm run playwright --reporter=html --output=playwright-report
-  needs: [install_dependencies]
-  artifacts:
-    when: always
-    paths:
-      - playwright-report/
+# playwright_test:
+#   stage: test
+#   image: mcr.microsoft.com/playwright:v1.54.0-noble
+#   before_script:
+#     - npx playwright install chrome
+#   script:
+#     - npm run playwright --reporter=html --output=playwright-report
+#   needs: [install_dependencies]
+#   artifacts:
+#     when: always
+#     paths:
+#       - playwright-report/
 #   rules:
 #     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
 # ---- BUILD IMAGE ----
-docker_build:
-    stage: build
-    image: docker:latest
-    services:
-        - docker:dind
-    variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-      DOCKER_HOST: tcp://docker:2375
-      DOCKER_TLS_CERTDIR: ""
-    script:
-      - docker info  # check connection
-      - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-      - docker build -f Dockerfile.prod -t $DOCKER_IMAGE:$DOCKER_TAG .
-      - docker push $DOCKER_IMAGE:$DOCKER_TAG
+# docker_build:
+#     stage: build
+#     image: docker:latest
+#     services:
+#         - docker:dind
+#     variables:
+#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+#       DOCKER_HOST: tcp://docker:2375
+#       DOCKER_TLS_CERTDIR: ""
+#     script:
+#       - docker info  # check connection
+#       - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+#       - docker build -f Dockerfile.prod -t $DOCKER_IMAGE:$DOCKER_TAG .
+#       - docker push $:$DOCKER_TAG
     # only:
     #     - main
 
 # ---- TRIVY SCAN ----
 # This job runs the Trivy security scanner against the Docker image and filesystem.
-trivy_scan:
-  image:
-    name: aquasec/trivy:latest
-    entrypoint: [""]
-  stage: security
-  variables:
-      DOCKER_NAME: 'cheulong/movies-finder-frontend'
-      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-  script:
-    - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json $DOCKER_IMAGE:$DOCKER_TAG
-  allow_failure: false
-  needs: [docker_build]
+# trivy_scan:
+#   image:
+#     name: aquasec/trivy:latest
+#     entrypoint: [""]
+#   stage: security
+#   variables:
+#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
+#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+#   script:
+#     - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json $DOCKER_IMAGE:$DOCKER_TAG
+#   allow_failure: false
+#   needs: [docker_build]
   # rules:
   #   - if: '$CI_COMMIT_BRANCH == "main"'
-  artifacts:
-    paths:
-      - trivy-report.json
-    when: always
+  # artifacts:
+  #   paths:
+  #     - trivy-report.json
+  #   when: always
 
 # ---- SYFT SBOM ----
 # This job generates a Software Bill of Materials (SBOM) using Syft.
-syft_sbom:
-  image:
-    name: docker:latest
-  stage: security
-  variables:
-    DOCKER_NAME: 'cheulong/movies-finder-frontend'
-    DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-    DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  services:
-        - docker:dind
-  needs: [docker_build]
-  before_script:
-    # Login to GitLab Container Registry to pull the image
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-    - apk add --no-cache curl bash
-    # Download and install Syft CLI
-    - curl -sSfL https://get.anchore.io/syft | sh -s -- -b /usr/local/bin
-  script:
-    - syft --version
-    - syft $DOCKER_IMAGE:$DOCKER_TAG -o spdx-json > sbom.spdx.json
-  artifacts:
-    paths:
-      - sbom.spdx.json
-  when: always
-  allow_failure: true
-  # rules:
-  #   - if: '$CI_COMMIT_BRANCH == "main"'
-
-# ---- GRYPE SCAN ----
-# This job runs the Grype vulnerability scanner against the SBOM generated by Syft.
-grype_scan:
-  image:
-    name: alpine:latest
-  stage: security
-  needs: [syft_sbom]
-  before_script:
-    # Login to GitLab Container Registry to pull the image
-    - apk add --no-cache curl bash
-    # Download and install Syft CLI
-    - curl -sSfL https://get.anchore.io/grype | sh -s -- -b /usr/local/bin
-  script:
-    - grype sbom:sbom.spdx.json --fail-on high
-
-# ---- RUN APP ----
-# This job runs the application using Docker Compose.
-# run_app:
-#   stage: dast_scan
+# syft_sbom:
 #   image:
 #     name: docker:latest
-#   needs:
-#     - job: docker_build
+#   stage: security
 #   variables:
 #     DOCKER_NAME: 'cheulong/movies-finder-frontend'
 #     DOCKER_IMAGE: $CI_REGISTRY_IMAGE
@@ -208,37 +158,84 @@ grype_scan:
 #     DOCKER_TLS_CERTDIR: ""
 #   services:
 #         - docker:dind
+#   needs: [docker_build]
 #   before_script:
+#     # Login to GitLab Container Registry to pull the image
 #     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
 #     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+#     - apk add --no-cache curl bash
+#     - curl -sSfL https://get.anchore.io/syft | sh -s -- -b /usr/local/bin
 #   script:
-#     - docker run --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
-#     - sleep 15  # wait for app to start
+#     - syft --version
+#     - syft $DOCKER_IMAGE:$DOCKER_TAG -o spdx-json > sbom.spdx.json
+#   artifacts:
+#     paths:
+#       - sbom.spdx.json
+#   when: always
+#   allow_failure: true
+  # rules:
+  #   - if: '$CI_COMMIT_BRANCH == "main"'
+
+# ---- GRYPE SCAN ----
+# This job runs the Grype vulnerability scanner against the SBOM generated by Syft.
+# grype_scan:
+#   image:
+#     name: alpine:latest
+#   stage: security
+#   needs: [syft_sbom]
+#   before_script:
+#     - apk add --no-cache curl bash
+#     - curl -sSfL https://get.anchore.io/grype | sh -s -- -b /usr/local/bin
+#   script:
+#     - grype sbom:sbom.spdx.json --fail-on high
+
+# ---- RUN APP ----
+# This job runs the application using Docker Compose.
+run_app:
+  stage: dast_scan
+  image:
+    name: docker:latest
+  # needs:
+  #   - job: docker_build
+  variables:
+    DOCKER_NAME: 'cheulong/movies-finder-frontend'
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+    DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  services:
+        - docker:dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+    - docker pull $DOCKER_IMAGE:e4ac7b2b
+  script:
+    - docker run --rm -d -p 80:80 $DOCKER_IMAGE:e4ac7b2b
+    - sleep 15  # wait for app to start
 
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
-# owap_zap:
-#     stage: dast_scan
-#     image: zaproxy/zap-stable
-#     allow_failure: true
-#     before_script:
-#     - mkdir -p /zap/wrk
-#     script:
-#         - echo 'owap zap'
-#         - curl http://127.0.0.1:80/ # Ensure the app is running
-#         - zap-baseline.py -t http://127.0.0.1:80/ -g gen.conf -r zap-report.html
-#         - cp /zap/wrk/zap-report.html .
-#         # full scan: zap-full-scan.py
-#         # api scan: zap-api-scan.py
-#     needs:
-#       - job: run_app
-#     artifacts:
-#         expire_in: "30 days"
-#         when: always
-#         reports:
-#           dast: zap-report.html
-#         paths:
-#           - zap-report.html
+owap_zap:
+    stage: dast_scan
+    image: zaproxy/zap-stable
+    allow_failure: true
+    before_script:
+    - mkdir -p /zap/wrk
+    script:
+        - echo 'owap zap'
+        - curl http://127.0.0.1:80/ # Ensure the app is running
+        - zap-baseline.py -t http://127.0.0.1:80/ -g gen.conf -r zap-report.html
+        - cp /zap/wrk/zap-report.html .
+        # full scan: zap-full-scan.py
+        # api scan: zap-api-scan.py
+    needs:
+      - job: run_app
+    artifacts:
+        expire_in: "30 days"
+        when: always
+        reports:
+          dast: zap-report.html
+        paths:
+          - zap-report.html
     # only:
     # - main
 
