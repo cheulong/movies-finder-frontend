@@ -262,8 +262,8 @@ grype_scan:
     # Download and install Syft CLI
     - curl -sSfL https://get.anchore.io/grype | sh -s -- -b /usr/local/bin
   script:
-    - grype sbom:sbom.spdx.json --exit-code 1 --severity HIGH,CRITICAL
-    - grype sbom:sbom-cyclonedx.json --exit-code 1 --severity HIGH,CRITICAL
+    - grype sbom:sbom.spdx.json --fail-on high
+    - grype sbom:sbom-cyclonedx.json --fail-on high
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
@@ -271,6 +271,8 @@ run_app:
   stage: run_app
   image:
     name: docker:latest
+  needs:
+    - job: docker_build
   variables:
     DOCKER_NAME: 'cheulong/movies-finder-frontend'
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE
@@ -302,7 +304,7 @@ owap_zap:
         # full scan: zap-full-scan.py
         # api scan: zap-api-scan.py
     needs:
-      - job: install_dependencies
+      - job: run_app
     artifacts:
         expire_in: "30 days"
         when: always
