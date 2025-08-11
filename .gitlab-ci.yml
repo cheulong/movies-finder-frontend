@@ -245,55 +245,113 @@ image: node:23-bookworm-slim
     # - main
 
 
-# ---- DEPLOY IMAGE ----
-# deploy_image:
-#     stage: deploy
-#     image: docker:latest
-#     services:
-#         - docker:dind
-#     variables:
-#       DOCKER_NAME: 'cheulong/movies-finder-frontend'
-#       DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-#       DOCKER_TAG: $CI_COMMIT_SHORT_SHA
-#       DOCKER_HOST: tcp://docker:2375
-#       DOCKER_TLS_CERTDIR: ""
-#     script:
-#         - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
-#         - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-#         - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_NAME:latest
-#         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-#         - docker push $DOCKER_NAME:latest
-#     only:
-#         - main
+# ---- PUSH IMAGE ----
+push_image:
+    stage: deploy
+    image: docker:latest
+    services:
+        - docker:dind
+    variables:
+      DOCKER_NAME: 'cheulong/movies-finder-frontend'
+      DOCKER_IMAGE: $CI_REGISTRY_IMAGE
+      DOCKER_TAG: $CI_COMMIT_SHORT_SHA
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_TLS_CERTDIR: ""
+    script:
+        - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+        - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+        - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_NAME:latest
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push $DOCKER_NAME:latest
+    only:
+        - main
+
 
 # ---- UPDATE MANIFEST REPO ----
-update_manifest_repo:
-  stage: update-deployment-manifest
+deploy_dev:
+  image: alpine:latest
+  stage: deploy
 #   needs:
 #     - update_manifest_repo
-  image: alpine:3.20
 
   before_script:
     - apk add --no-cache git bash
-
   script:
     - git config --global user.email "ci@example.com"
     - git config --global user.name "GitLab CI"
     - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
     - cd movies-finder-deployment/web-app
-    - 'sed -i "s|tag:.*|tag: $CI_COMMIT_SHORT_SHA|" values.yaml'
+    - 'sed -i "s|tag:.*|tag: $CI_COMMIT_SHORT_SHA|" values.dev.yaml'
     - echo "Checking for changes..."
     - |
-                if git diff --quiet; then
-                  echo "No changes to commit."
-                else
-                  git add .
-                  git commit -m "Update deployment image tag to $CI_COMMIT_SHORT_SHA"
-                  git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
-                fi
+        if git diff --quiet; then
+          echo "No changes to commit."
+        else
+          git add .
+          git commit -m "Update development deployment image tag to $CI_COMMIT_SHORT_SHA"
+          git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
+        fi
 #   only:
 #     - main
 #   when: on_success
+
+deploy_staging:
+  image: alpine:latest
+  stage: deploy
+#   needs:
+#     - update_manifest_repo
+  variables:
+    DEPLOY_ENV: "staging"
+  before_script:
+    - apk add --no-cache git bash
+  script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "GitLab CI"
+    - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+    - cd movies-finder-deployment/web-app
+    - 'sed -i "s|tag:.*|tag: $CI_COMMIT_SHORT_SHA|" values.staging.yaml'
+    - echo "Checking for changes..."
+    - |
+        if git diff --quiet; then
+          echo "No changes to commit."
+        else
+          git add .
+          git commit -m "Update staging deployment image tag to $CI_COMMIT_SHORT_SHA"
+          git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
+        fi
+#   only:
+#     - main
+#   when: on_success
+  when: manual
+
+
+deploy_prod:
+  image: alpine:latest
+  stage: deploy
+#   needs:
+#     - update_manifest_repo
+  variables:
+    DEPLOY_ENV: "production"
+  before_script:
+    - apk add --no-cache git bash
+  script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "GitLab CI"
+    - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+    - cd movies-finder-deployment/web-app
+    - 'sed -i "s|tag:.*|tag: $CI_COMMIT_SHORT_SHA|" values.prod.yaml'
+    - echo "Checking for changes..."
+    - |
+        if git diff --quiet; then
+          echo "No changes to commit."
+        else
+          git add .
+          git commit -m "Update production deployment image tag to $CI_COMMIT_SHORT_SHA"
+          git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
+        fi
+  when: manual
+  only:
+    - tags
 
 # ---- SLACK NOTIFY ----
 slack_notify:
@@ -304,7 +362,16 @@ slack_notify:
     - apk add --no-cache curl
     script:
       - |
-          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Pipeline finished for commit $CI_COMMIT_SHORT_SHA\"}" "$SLACK_WEBHOOK"
+          if [ "$DEPLOY_ENV" = "staging" ]; then
+            MESSAGE="🚀 Deployed to *STAGING* – $CI_COMMIT_SHORT_SHA"
+          elif [ "$DEPLOY_ENV" = "production" ]; then
+            MESSAGE="🔥 Deployed to *PRODUCTION* – $CI_COMMIT_SHORT_SHA"
+          else
+            MESSAGE="✅ Deployment complete – $CI_COMMIT_SHORT_SHA"
+          fi
+
+          echo "Sending Slack notification: $MESSAGE"
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK"
     # when: always
 # build:
 #     stage: build
