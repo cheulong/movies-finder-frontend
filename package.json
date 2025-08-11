@@ -14,7 +14,8 @@
     "playwright:ui": "playwright test --ui",
     "prepare": "husky",
     "lint-staged": "lint-staged",
-    "check-gitleaks": "gitleaks detect --source . --exit-code 1 --no-git --redact -r a.json"
+    "check-gitleaks": "gitleaks detect --source . --exit-code 1 --no-git --redact -r a.json",
+    "release": "release-it"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -23,10 +24,13 @@
     ]
   },
   "dependencies": {
-    "vite": "^7.0.4",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@vitejs/plugin-react": "^4.6.0",
+    "commitlint": "^19.8.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "vite": "^7.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
@@ -42,6 +46,7 @@
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.2",
+    "release-it": "^19.0.4",
     "vitest": "^3.2.4"
   }
 }
