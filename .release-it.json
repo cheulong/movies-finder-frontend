@@ -23,18 +23,7 @@
       "infile": "CHANGELOG.md",
       "header": "# Something else",
       "preset": {
-        "name": "conventionalcommits",
-        "types": [
-          {
-            "type": "feat",
-            "section": "Features"
-          },
-          {
-            "type": "fix",
-            "section": "Bug Fixes"
-          },
-          {}
-        ]
+        "name": "conventionalcommits"
       }
     }
   }
