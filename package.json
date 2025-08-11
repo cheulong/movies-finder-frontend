@@ -1,7 +1,7 @@
 {
   "name": "movies-finder-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,6 +29,7 @@
   "dependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "@release-it/conventional-changelog": "^10.0.1",
     "@vitejs/plugin-react": "^4.6.0",
     "commitlint": "^19.8.1",
     "react": "^19.1.0",

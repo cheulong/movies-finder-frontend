@@ -1,5 +1,6 @@
 {
   "git": {
+    "requireCleanWorkingDir": false,
     "requireBranch": "main",
     "commitMessage": "chore: release v${version}"
   },
