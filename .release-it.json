@@ -15,15 +15,24 @@
     "publish": false
   },
   "hooks": {
-    "before:init": ["git pull", "npm run lint", "npm run test"],
-    "after:bump": "npx auto-changelog -p"
+    "before:init": ["git pull", "npm run lint", "npm run test"]
   },
   "plugins": {
     "@release-it/conventional-changelog": {
       "infile": "CHANGELOG.md",
-      "header": "# Something else",
       "preset": {
-        "name": "conventionalcommits"
+        "name": "conventionalcommits",
+        "types": [
+          {
+            "type": "feat",
+            "section": "Features"
+          },
+          {
+            "type": "fix",
+            "section": "Bug Fixes"
+          },
+          {}
+        ]
       }
     }
   }
