@@ -2,7 +2,7 @@
   "git": {
     "requireCleanWorkingDir": false,
     "requireBranch": "main",
-    "commitMessage": "chore: release v${version}"
+    "commitMessage": "chore(release): v${version}"
   },
   "gitlab": {
     "release": true,
@@ -15,12 +15,13 @@
     "publish": false
   },
   "hooks": {
-    "before:init":["git pull", "npm run lint", "npm run test"],
+    "before:init": ["git pull", "npm run lint", "npm run test"],
     "after:bump": "npx auto-changelog -p"
   },
   "plugins": {
     "@release-it/conventional-changelog": {
       "infile": "CHANGELOG.md",
+      "header": "# Something else",
       "preset": {
         "name": "conventionalcommits",
         "types": [
@@ -31,7 +32,8 @@
           {
             "type": "fix",
             "section": "Bug Fixes"
-          }
+          },
+          {}
         ]
       }
     }
