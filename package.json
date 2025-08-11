@@ -15,7 +15,10 @@
     "prepare": "husky",
     "lint-staged": "lint-staged",
     "check-gitleaks": "gitleaks detect --source . --exit-code 1 --no-git --redact -r a.json",
-    "release": "release-it"
+    "release": "release-it",
+    "release:patch": "release-it patch",
+    "release:minor": "release-it minor",
+    "release:major": "release-it major"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
