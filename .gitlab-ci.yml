@@ -387,24 +387,24 @@ deploy_prod:
     name: production
 
 # ---- UPDATE CHANGELOG ----
-update_changelog:
-  stage: release
-  tags:
-    - linux-homelab-general-vm
-  needs: [deploy_prod]
-  variables:
-    GITLAB_TOKEN: $RELEASE_IT
-  before_script:
-    - apt-get update && apt-get install -y git
-    - git config --global user.email "ci-bot@gitlab.com"
-    - git config --global user.name "GitLab CI"
-    - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
-    - git fetch --all --tags
-    - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
-  script:
-    - npx release-it --ci 
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+# update_changelog:
+#   stage: release
+#   tags:
+#     - linux-homelab-general-vm
+#   needs: [deploy_prod]
+#   variables:
+#     GITLAB_TOKEN: $RELEASE_IT
+#   before_script:
+#     - apt-get update && apt-get install -y git
+#     - git config --global user.email "ci-bot@gitlab.com"
+#     - git config --global user.name "GitLab CI"
+#     - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
+#     - git fetch --all --tags
+#     - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
+#   script:
+#     - npx release-it --ci 
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "main"'
 
 push_release_image:
   stage: release
@@ -413,15 +413,18 @@ push_release_image:
   image: docker:latest
   services:
     - name: docker:dind
-  needs: [update_changelog]
+  # needs: [update_changelog]
   script:
+    - cat image_tag.txt || true
     - IMAGE_TAG=$(cat image_tag.txt)
     - VERSION=$(node -p "require('./package.json').version")
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - docker pull $DOCKER_NAME:$IMAGE_TAG
-    - docker tag $DOCKER_NAME:$DOCKER_TAG $DOCKER_NAME:$VERSION
-    - docker push $DOCKER_NAME:$VERSION
-    - echo "Release process completed successfully."
+    - 'echo IMAGE_TAG: $IMAGE_TAG'
+    - 'echo VERSION: $VERSION'
+    # - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    # - docker pull $DOCKER_NAME:$IMAGE_TAG
+    # - docker tag $DOCKER_NAME:$DOCKER_TAG $DOCKER_NAME:$VERSION
+    # - docker push $DOCKER_NAME:$VERSION
+    # - echo "Release process completed successfully."
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
