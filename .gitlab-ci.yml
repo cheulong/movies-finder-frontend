@@ -135,6 +135,7 @@ build:
   image: docker:latest
   services:
     - name: docker:dind
+      alias: docker
       command: ["--tls=false"]
   variables:
     DOCKER_HOST: tcp://docker:2375
