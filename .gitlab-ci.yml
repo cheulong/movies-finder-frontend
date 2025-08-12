@@ -302,6 +302,10 @@ deploy_dev:
         git commit -m "ci: Update development deployment image tag to $CI_COMMIT_SHORT_SHA"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
+    - echo "DEPLOY_ENV=development" >> variables.env
+  artifacts:
+    reports:
+      dotenv: variables.env
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
   environment:
@@ -332,6 +336,10 @@ deploy_staging:
         git commit -m "ci: Update staging deployment image tag to $IMAGE_TAG"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
+    - echo "DEPLOY_ENV=staging" >> variables.env
+  artifacts:
+    reports:
+      dotenv: variables.env
   rules:
     - if: '$CI_COMMIT_BRANCH == "staging"'
   when: manual
@@ -364,9 +372,12 @@ deploy_prod:
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
     - echo $IMAGE_TAG > image_tag.txt
+    - echo "DEPLOY_ENV=production" >> variables.env
   artifacts:
     paths:
       - image_tag.txt
+    reports:
+      dotenv: variables.env
   when: manual
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -434,6 +445,10 @@ slack_notify:
       echo "Sending Slack notification: $MESSAGE"
       curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK"
   rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+      needs: [deploy_staging]
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      needs: [deploy_prod]
     - when: always
 
 # --- Clean up ---
