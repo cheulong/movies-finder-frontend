@@ -134,7 +134,8 @@ build:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -174,7 +175,8 @@ syft_sbom:
   image:
     name: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   before_script:
     # Login to GitLab Container Registry to pull the image
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
@@ -225,7 +227,6 @@ run_app:
   services:
     - name: docker:dind
       alias: docker
-
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
@@ -269,7 +270,8 @@ push_image:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
@@ -399,7 +401,8 @@ push_release_image:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   needs: [update_changelog]
   script:
     - IMAGE_TAG=$(cat image_tag.txt)
@@ -445,7 +448,8 @@ clean_up:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   script:
     - echo "Stop docker container"
     - docker stop app || true
