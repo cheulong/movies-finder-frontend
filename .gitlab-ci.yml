@@ -124,8 +124,6 @@ playwright_test:
     paths:
       - playwright-report/
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
-      when: manual
     - if: '$CI_COMMIT_BRANCH == "dev"'
   allow_failure: false
 
@@ -425,18 +423,14 @@ slack_notify:
     - apk add --no-cache curl
   script:
     - |
-      if [ "$CI_PIPELINE_STATUS" = "success" ]; then
-        if [ "$DEPLOY_ENV" = "staging" ]; then
-          MESSAGE="✅🚀 Deployed to *STAGING* – $CI_PIPELINE_STATUS"
-        elif [ "$DEPLOY_ENV" = "production" ]; then
-          MESSAGE="✅🔥 Deployed to *PRODUCTION* – $CI_PIPELINE_STATUS"
-        elif [ "$DEPLOY_ENV" = "development" ]; then
-          MESSAGE="✅🛠️ Deployed to *DEVELOPMENT* – $CI_PIPELINE_STATUS"
-        else
-          MESSAGE="✅ Pipeline complete – $CI_PIPELINE_STATUS"
-        fi
+      if [ "$DEPLOY_ENV" = "staging" ]; then
+        MESSAGE="✅🚀 Deployed to *STAGING* – $CI_COMMIT_SHORT_SHA"
+      elif [ "$DEPLOY_ENV" = "production" ]; then
+        MESSAGE="✅🔥 Deployed to *PRODUCTION* – $CI_COMMIT_SHORT_SHA"
+      elif [ "$DEPLOY_ENV" = "development" ]; then
+        MESSAGE="✅🛠️ Deployed to *DEVELOPMENT* – $CI_COMMIT_SHORT_SHA"
       else
-        MESSAGE="❌ Pipeline failed – $CI_PIPELINE_STATUS"
+        MESSAGE="✅ Pipeline complete – $CI_COMMIT_SHORT_SHA"
       fi
 
       echo "Sending Slack notification: $MESSAGE"
