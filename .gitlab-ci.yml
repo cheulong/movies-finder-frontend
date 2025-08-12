@@ -302,10 +302,10 @@ deploy_dev:
         git commit -m "ci: Update development deployment image tag to $CI_COMMIT_SHORT_SHA"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
-    - echo "DEPLOY_ENV=development" > build.env
+    - echo "development" > deploy_env.txt
   artifacts:
-    reports:
-      dotenv: build.env
+    paths:
+      - deploy_env.txt
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
   environment:
@@ -336,10 +336,10 @@ deploy_staging:
         git commit -m "ci: Update staging deployment image tag to $IMAGE_TAG"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
-    - echo "DEPLOY_ENV=staging" > build.env
+    - echo "staging" > deploy_env.txt
   artifacts:
-    reports:
-      dotenv: build.env
+    paths:
+      - deploy_env.txt
   rules:
     - if: '$CI_COMMIT_BRANCH == "staging"'
   when: manual
@@ -372,12 +372,11 @@ deploy_prod:
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
     - echo $IMAGE_TAG > image_tag.txt
-    - echo "DEPLOY_ENV=production" > build.env
+    - echo "production" > deploy_env.txt
   artifacts:
     paths:
       - image_tag.txt
-    reports:
-      dotenv: build.env
+      - deploy_env.txt
   when: manual
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -431,7 +430,7 @@ slack_notify:
   before_script:
     - apk add --no-cache curl
   script:
-    - echo $DEPLOY_ENV
+    - DEPLOY_ENV=$(cat deploy_env.txt)
     - |
       if [ "$DEPLOY_ENV" = "staging" ]; then
         MESSAGE="✅🚀 Deployed to *STAGING* – $CI_COMMIT_SHORT_SHA"
