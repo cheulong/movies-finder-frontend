@@ -433,7 +433,7 @@ slack_notify:
   before_script:
     - apk add --no-cache curl
   script:
-    - DEPLOY_ENV=$(cat deploy_env.txt)
+    - DEPLOY_ENV=$(cat deploy_env.txt) || ''
     - |
       if [ "$DEPLOY_ENV" = "staging" ]; then
         MESSAGE="✅🚀 Deployed to *STAGING* – $CI_COMMIT_SHORT_SHA"
