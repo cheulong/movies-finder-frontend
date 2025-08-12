@@ -374,11 +374,13 @@ deploy_prod:
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
     - echo $IMAGE_TAG > image_tag.txt
+    - echo $(git tag --sort=-v:refname | head -n1) > version.txt
   after_script:
     - echo "production" > deploy_env.txt
   artifacts:
     paths:
       - movies-finder-deployment/web-app/image_tag.txt
+      - movies-finder-deployment/web-app/version.txt
       - deploy_env.txt
   when: manual
   rules:
@@ -418,8 +420,9 @@ push_release_image:
 
   script:
     - cat image_tag.txt || true
+    - cat version.txt.txt || true
     - IMAGE_TAG=$(cat image_tag.txt)
-    - VERSION=$(node -p "require('./package.json').version")
+    - VERSION=$(cat version.txt)
     - 'echo IMAGE_TAG: $IMAGE_TAG'
     - 'echo VERSION: $VERSION'
     # - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
