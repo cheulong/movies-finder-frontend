@@ -363,7 +363,7 @@ deploy_prod:
     - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
     - cd movies-finder-deployment/web-app
     - "IMAGE_TAG=$(grep 'tag:' values.dev.yaml | head -1 | sed 's/tag: //')"
-    - 'sed -i "s|tag:.*|tag: $IMAGE_TAG|" values.staging.yaml'
+    - 'sed -i "s|tag:.*|tag: $IMAGE_TAG|" values.prod.yaml'
     - echo "Checking for changes..."
     - |
       if git diff --quiet; then
@@ -399,8 +399,8 @@ update_changelog:
     - git config --global user.email "ci-bot@gitlab.com"
     - git config --global user.name "GitLab CI"
     - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
-    - git fetch --tags
-    - git checkout $CI_COMMIT_BRANCH
+    - git fetch --all --tags
+    - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
   script:
     - npx release-it --ci 
   rules:
