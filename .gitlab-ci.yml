@@ -398,7 +398,7 @@ update_changelog:
     - apt-get update && apt-get install -y git
     - git config --global user.email "ci-bot@gitlab.com"
     - git config --global user.name "GitLab CI"
-    - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
     - git fetch --tags
     - git checkout $CI_COMMIT_BRANCH
   script:
