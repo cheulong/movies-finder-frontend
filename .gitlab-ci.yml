@@ -354,6 +354,10 @@ deploy_prod:
         git commit -m "ci: Update production deployment image tag to $IMAGE_TAG"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
+    - echo $IMAGE_TAG > image_tag.txt
+  artifacts:
+    paths:
+      - image_tag.txt
   when: manual
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -374,6 +378,25 @@ update_changelog:
     - git remote set-url origin "https://gitlab-ci-token:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
   script:
     - npx release-it --ci 
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+push_release_image:
+  stage: release
+  tags:
+    - linux-homelab-general-vm
+  image: docker:latest
+  services:
+    - docker:dind
+  needs: [update_changelog]
+  script:
+    - IMAGE_TAG=$(cat image_tag.txt)
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker pull $DOCKER_NAME:$IMAGE_TAG
+    - docker tag $DOCKER_NAME:$DOCKER_TAG $DOCKER_NAME:$VERSION
+    - docker push $DOCKER_NAME:$VERSION
+    - echo "Release process completed successfully."
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
