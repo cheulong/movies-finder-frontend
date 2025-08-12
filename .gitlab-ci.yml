@@ -1,15 +1,15 @@
 stages:
-  # - prepare
-  # - sast_scan
-  # - test
+  - prepare
+  - sast_scan
+  - test
   - build
-  # - security
-  # - dast_scan
-  # - deploy
-  # - update-deployment-manifest
-  # - release
-  # - slack_notify
-  # - clean_up
+  - security
+  - dast_scan
+  - deploy
+  - update-deployment-manifest
+  - release
+  - slack_notify
+  - clean_up
 
 image: node:23-bookworm-slim
 
