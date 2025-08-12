@@ -373,8 +373,8 @@ deploy_prod:
         git commit -m "ci: Update production deployment image tag to $IMAGE_TAG"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
-    - echo $IMAGE_TAG > image_tag.txt
   after_script:
+    - echo $IMAGE_TAG > image_tag.txt
     - echo "production" > deploy_env.txt
   artifacts:
     paths:
