@@ -402,9 +402,11 @@ push_release_image:
 
 # ---- SLACK NOTIFY ----
 slack_notify:
+  stage: slack_notify
+  tags:
+    - linux-homelab-general-vm
   image:
     name: alpine:latest
-  stage: slack_notify
   before_script:
     - apk add --no-cache curl
   script:
@@ -425,6 +427,8 @@ slack_notify:
 # --- Clean up ---
 clean_up:
   stage: clean_up
+  tags:
+    - linux-homelab-general-vm
   image: docker:latest
   services:
     - docker:dind
