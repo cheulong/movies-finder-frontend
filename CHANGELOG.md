@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.1.15](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.1.14...0.1.15) (2025-08-12)
+
 * chore: add alias docker (55facc1)
 * chore: add alias docker (b9d85dd)
 * chore: add alias docker (e917b4c)
