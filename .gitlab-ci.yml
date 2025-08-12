@@ -124,6 +124,8 @@ playwright_test:
     paths:
       - playwright-report/
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+      when: manual
     - if: '$CI_COMMIT_BRANCH == "dev"'
   allow_failure: false
 
