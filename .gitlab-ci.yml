@@ -208,7 +208,7 @@ run_app:
   image:
     name: docker:latest
   needs:
-    - job: docker_build
+    - job: build
   variables:
     DOCKER_DRIVER: overlay2
   services:
