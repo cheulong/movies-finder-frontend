@@ -424,14 +424,18 @@ slack_notify:
     - apk add --no-cache curl
   script:
     - |
-      if [ "$DEPLOY_ENV" = "staging" ]; then
-        MESSAGE="🚀 Deployed to *STAGING*
-      elif [ "$DEPLOY_ENV" = "production" ]; then
-        MESSAGE="🔥 Deployed to *PRODUCTION*
-      elif [ "$DEPLOY_ENV" = "development" ]; then
-        MESSAGE="🛠️ Deployed to *DEVELOPMENT*"
+      if [ "$CI_PIPELINE_STATUS" = "success" ]; then
+        if [ "$DEPLOY_ENV" = "staging" ]; then
+          MESSAGE="✅🚀 Deployed to *STAGING* – $CI_PIPELINE_STATUS"
+        elif [ "$DEPLOY_ENV" = "production" ]; then
+          MESSAGE="✅🔥 Deployed to *PRODUCTION* – $CI_PIPELINE_STATUS"
+        elif [ "$DEPLOY_ENV" = "development" ]; then
+          MESSAGE="✅🛠️ Deployed to *DEVELOPMENT* – $CI_PIPELINE_STATUS"
+        else
+          MESSAGE="✅ Pipeline complete – $CI_PIPELINE_STATUS"
+        fi
       else
-        MESSAGE="✅ Pipeline complete – $CI_COMMIT_SHORT_SHA"
+        MESSAGE="❌ Pipeline failed – $CI_PIPELINE_STATUS"
       fi
 
       echo "Sending Slack notification: $MESSAGE"
