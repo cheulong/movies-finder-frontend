@@ -113,7 +113,6 @@ playwright_test:
     - npx playwright install chrome
   script:
     - npm run playwright --reporter=html --output=playwright-report
-  needs: [install_dependencies]
   artifacts:
     when: always
     paths:
