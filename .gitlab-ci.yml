@@ -302,7 +302,7 @@ deploy_dev:
         git commit -m "ci: Update development deployment image tag to $CI_COMMIT_SHORT_SHA"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
-    - echo "DEPLOY_ENV=development" >> build.env
+    - echo "DEPLOY_ENV=development" > build.env
   artifacts:
     reports:
       dotenv: build.env
@@ -336,7 +336,7 @@ deploy_staging:
         git commit -m "ci: Update staging deployment image tag to $IMAGE_TAG"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
-    - echo "DEPLOY_ENV=staging" >> build.env
+    - echo "DEPLOY_ENV=staging" > build.env
   artifacts:
     reports:
       dotenv: build.env
@@ -372,7 +372,7 @@ deploy_prod:
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
     - echo $IMAGE_TAG > image_tag.txt
-    - echo "DEPLOY_ENV=production" >> build.env
+    - echo "DEPLOY_ENV=production" > build.env
   artifacts:
     paths:
       - image_tag.txt
