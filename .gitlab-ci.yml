@@ -389,14 +389,13 @@ deploy_prod:
 # ---- UPDATE CHANGELOG ----
 update_changelog:
   stage: release
-  image: alpine:latest
   tags:
     - linux-homelab-general-vm
   needs: [deploy_prod]
   variables:
     GITLAB_TOKEN: $CI_JOB_TOKEN
   before_script:
-    - apk add --no-cache git bash
+    - apt-get update && apt-get install -y git
     - git config user.name "GitLab CI"
     - git config user.email "ci@example.com"
     - git remote set-url origin "https://gitlab-ci-token:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
@@ -412,7 +411,6 @@ push_release_image:
   image: docker:latest
   services:
     - name: docker:dind
-      alias: docker
   needs: [update_changelog]
   script:
     - IMAGE_TAG=$(cat image_tag.txt)
