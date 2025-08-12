@@ -35,6 +35,8 @@ install_dependencies:
     paths:
       - node_modules/
     expire_in: 1 hour
+  rules:
+    - when: always
 
 # ---- ESLINT ----
 eslint:
@@ -44,6 +46,8 @@ eslint:
   script:
     - npm run lint
   allow_failure: false
+  rules:
+    - when: always
 
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
@@ -60,6 +64,8 @@ gitleaks_scan:
       - gitleaks-report.json
     when: always
   allow_failure: false
+  rules:
+    - when: always
 
 # ---- DEPENDENCY AUDIT ----
 npm_audit:
@@ -69,6 +75,8 @@ npm_audit:
   script:
     - npm audit --audit-level=moderate
   allow_failure: false
+  rules:
+    - when: always
 
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
@@ -99,6 +107,8 @@ unit_test:
     - npm run test
   needs: [install_dependencies]
   allow_failure: false
+  rules:
+    - when: always
 
 playwright_test:
   stage: test
@@ -109,13 +119,12 @@ playwright_test:
     - npx playwright install chrome
   script:
     - npm run playwright --reporter=html --output=playwright-report
-  needs: [install_dependencies]
   artifacts:
     when: always
     paths:
       - playwright-report/
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+    - if: '$CI_COMMIT_BRANCH == "dev"'
   allow_failure: false
 
 # ---- BUILD IMAGE ----
@@ -125,13 +134,12 @@ build:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
   script:
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
     - docker build -f Dockerfile.prod -t $DOCKER_IMAGE:$DOCKER_TAG .
     - docker push $DOCKER_IMAGE:$DOCKER_TAG
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
 # ---- TRIVY SCAN ----
@@ -151,7 +159,7 @@ trivy_scan:
       - trivy-report.json
     when: always
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+    - if: '$CI_COMMIT_BRANCH == "dev"'
   allow_failure: false
 
 # ---- SYFT SBOM ----
@@ -163,7 +171,8 @@ syft_sbom:
   image:
     name: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   before_script:
     # Login to GitLab Container Registry to pull the image
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
@@ -209,12 +218,10 @@ run_app:
     name: docker:latest
   needs:
     - job: build
-  variables:
-    DOCKER_DRIVER: overlay2
+  # variables:
+  #   DOCKER_DRIVER: overlay2
   services:
     - name: docker:dind
-      alias: docker
-
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
@@ -232,7 +239,7 @@ owap_zap:
     - linux-homelab-general-vm
   image: zaproxy/zap-stable
   services:
-    - name: $DOCKER_IMAGE:e4ac7b2b
+    - name: $DOCKER_IMAGE:$DOCKER_TAG
       alias: app
   before_script:
     - mkdir -p /zap/wrk
@@ -258,7 +265,8 @@ push_image:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
@@ -294,6 +302,11 @@ deploy_dev:
         git commit -m "ci: Update development deployment image tag to $CI_COMMIT_SHORT_SHA"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
+  after_script:
+    - echo "development" > deploy_env.txt
+  artifacts:
+    paths:
+      - deploy_env.txt
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
   environment:
@@ -324,6 +337,11 @@ deploy_staging:
         git commit -m "ci: Update staging deployment image tag to $IMAGE_TAG"
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
+  after_script:
+    - echo "staging" > deploy_env.txt
+  artifacts:
+    paths:
+      - deploy_env.txt
   rules:
     - if: '$CI_COMMIT_BRANCH == "staging"'
   when: manual
@@ -356,9 +374,12 @@ deploy_prod:
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
     - echo $IMAGE_TAG > image_tag.txt
+  after_script:
+    - echo "production" > deploy_env.txt
   artifacts:
     paths:
       - image_tag.txt
+      - deploy_env.txt
   when: manual
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -388,7 +409,8 @@ push_release_image:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   needs: [update_changelog]
   script:
     - IMAGE_TAG=$(cat image_tag.txt)
@@ -411,19 +433,26 @@ slack_notify:
   before_script:
     - apk add --no-cache curl
   script:
+    - DEPLOY_ENV=$(cat deploy_env.txt) || true
     - |
       if [ "$DEPLOY_ENV" = "staging" ]; then
-        MESSAGE="🚀 Deployed to *STAGING*
+        MESSAGE="✅🚀 Deployed to *STAGING* – $CI_COMMIT_SHORT_SHA"
       elif [ "$DEPLOY_ENV" = "production" ]; then
-        MESSAGE="🔥 Deployed to *PRODUCTION*
+        MESSAGE="✅🔥 Deployed to *PRODUCTION* – $CI_COMMIT_SHORT_SHA"
       elif [ "$DEPLOY_ENV" = "development" ]; then
-        MESSAGE="🛠️ Deployed to *DEVELOPMENT*"
+        MESSAGE="✅🛠️ Deployed to *DEVELOPMENT* – $CI_COMMIT_SHORT_SHA"
       else
         MESSAGE="✅ Pipeline complete – $CI_COMMIT_SHORT_SHA"
       fi
 
       echo "Sending Slack notification: $MESSAGE"
       curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+      needs: [deploy_staging]
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      needs: [deploy_prod]
+    - when: always
 
 # --- Clean up ---
 clean_up:
@@ -432,11 +461,13 @@ clean_up:
     - linux-homelab-general-vm
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
   script:
     - echo "Stop docker container"
     - docker stop app || true
     - echo "Cleaning up temporary files"
     - rm -rf node_modules/
-  when: always
+  rules:
+    - when: always
   allow_failure: true
