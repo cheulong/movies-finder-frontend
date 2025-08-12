@@ -35,6 +35,8 @@ install_dependencies:
     paths:
       - node_modules/
     expire_in: 1 hour
+  rules:
+    - when: always
 
 # ---- ESLINT ----
 eslint:
@@ -44,6 +46,8 @@ eslint:
   script:
     - npm run lint
   allow_failure: false
+  rules:
+    - when: always
 
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
@@ -60,6 +64,8 @@ gitleaks_scan:
       - gitleaks-report.json
     when: always
   allow_failure: false
+  rules:
+    - when: always
 
 # ---- DEPENDENCY AUDIT ----
 npm_audit:
@@ -69,6 +75,8 @@ npm_audit:
   script:
     - npm audit --audit-level=moderate
   allow_failure: false
+  rules:
+    - when: always
 
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
@@ -99,6 +107,8 @@ unit_test:
     - npm run test
   needs: [install_dependencies]
   allow_failure: false
+  rules:
+    - when: always
 
 playwright_test:
   stage: test
@@ -423,6 +433,8 @@ slack_notify:
 
       echo "Sending Slack notification: $MESSAGE"
       curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK"
+  rules:
+    - when: always
 
 # --- Clean up ---
 clean_up:
@@ -437,5 +449,6 @@ clean_up:
     - docker stop app || true
     - echo "Cleaning up temporary files"
     - rm -rf node_modules/
-  when: always
+  rules:
+    - when: always
   allow_failure: true
