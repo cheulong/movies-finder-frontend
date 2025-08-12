@@ -135,9 +135,8 @@ build:
   image: docker:latest
   services:
     - name: docker:dind
-      alias: docker
   variables:
-    DOCKER_HOST: tcp://docker:2376
+    DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   script:
     - unset DOCKER_HOST
