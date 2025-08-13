@@ -374,13 +374,11 @@ deploy_prod:
         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
       fi
     - echo $IMAGE_TAG > image_tag.txt
-    - echo $(git tag --sort=-v:refname | head -n1) > version.txt
   after_script:
     - echo "production" > deploy_env.txt
   artifacts:
     paths:
       - movies-finder-deployment/web-app/image_tag.txt
-      - movies-finder-deployment/web-app/version.txt
       - deploy_env.txt
   when: manual
   rules:
@@ -389,24 +387,29 @@ deploy_prod:
     name: production
 
 # ---- UPDATE CHANGELOG ----
-# update_changelog:
-#   stage: release
-#   tags:
-#     - linux-homelab-general-vm
-#   needs: [deploy_prod]
-#   variables:
-#     GITLAB_TOKEN: $RELEASE_IT
-#   before_script:
-#     - apt-get update && apt-get install -y git
-#     - git config --global user.email "ci-bot@gitlab.com"
-#     - git config --global user.name "GitLab CI"
-#     - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
-#     - git fetch --all --tags
-#     - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
-#   script:
-#     - npx release-it --ci 
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "main"'
+update_changelog:
+  stage: release
+  tags:
+    - linux-homelab-general-vm
+  needs: [deploy_prod]
+  variables:
+    GITLAB_TOKEN: $RELEASE_IT
+  before_script:
+    - apt-get update && apt-get install -y git
+    - git config --global user.email "ci-bot@gitlab.com"
+    - git config --global user.name "GitLab CI"
+    - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
+    - git fetch --all --tags
+    - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
+  # script:
+  #   - npx release-it --ci 
+  after_script:
+    - echo $(git tag --sort=-v:refname | head -n1) > version.txt
+  artifacts:
+    paths:
+      - version.txt
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 push_release_image:
   stage: release
@@ -415,14 +418,11 @@ push_release_image:
   image: docker:latest
   services:
     - name: docker:dind
-  # needs: [update_changelog]
-  needs: [deploy_prod]
+  needs: [update_changelog]
 
   script:
-    - cat image_tag.txt || true
-    - cat version.txt.txt || true
-    - IMAGE_TAG=$(cat image_tag.txt)
-    - VERSION=$(cat version.txt)
+    - IMAGE_TAG=$(cat movies-finder-deployment/web-app/image_tag.txt)|| true
+    - VERSION=$(cat version.txt)|| true
     - 'echo IMAGE_TAG: $IMAGE_TAG'
     - 'echo VERSION: $VERSION'
     # - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
