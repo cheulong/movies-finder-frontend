@@ -402,7 +402,8 @@ update_changelog:
     - git fetch --all --tags
     - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
   script:
-    - npx release-it --ci 
+    - echo "Updating CHANGELOG.md"
+    # - npx release-it --ci 
   after_script:
     - echo $(git tag --sort=-v:refname | head -n1) > version.txt
   artifacts:
@@ -418,11 +419,11 @@ push_release_image:
   image: docker:latest
   services:
     - name: docker:dind
-  needs: [update_changelog]
+  needs: [update_changelog, deploy_prod]
 
   script:
-    - IMAGE_TAG=$(cat movies-finder-deployment/web-app/image_tag.txt)|| true
-    - VERSION=$(cat version.txt)|| true
+    - IMAGE_TAG=$(cat movies-finder-deployment/web-app/image_tag.txt)
+    - VERSION=$(cat version.txt)
     - 'echo IMAGE_TAG: $IMAGE_TAG'
     - 'echo VERSION: $VERSION'
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
