@@ -428,7 +428,7 @@ push_release_image:
     - 'echo VERSION: $VERSION'
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - docker pull $DOCKER_NAME:$IMAGE_TAG
-    - docker tag $DOCKER_NAME:$DOCKER_TAG $DOCKER_NAME:$VERSION
+    - docker tag $DOCKER_NAME:$IMAGE_TAG $DOCKER_NAME:$VERSION
     - docker push $DOCKER_NAME:$VERSION
     - echo "Release process completed successfully."
   rules:
