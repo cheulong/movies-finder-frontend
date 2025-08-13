@@ -402,8 +402,7 @@ update_changelog:
     - git fetch --all --tags
     - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
   script:
-    - echo "Updating CHANGELOG.md"
-    # - npx release-it --ci 
+    - npx release-it --ci 
   after_script:
     - echo $(git tag --sort=-v:refname | head -n1) > version.txt
   artifacts:
@@ -424,8 +423,6 @@ push_release_image:
   script:
     - IMAGE_TAG=$(cat movies-finder-deployment/web-app/image_tag.txt)
     - VERSION=$(cat version.txt)
-    - 'echo IMAGE_TAG: $IMAGE_TAG'
-    - 'echo VERSION: $VERSION'
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - docker pull $DOCKER_NAME:$IMAGE_TAG
     - docker tag $DOCKER_NAME:$IMAGE_TAG $DOCKER_NAME:$VERSION
