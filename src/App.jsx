@@ -2,7 +2,7 @@ import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
-import customLogger from "../opentelemetry";
+import customLogger from "../logger";
 const logger=customLogger({ serviceName: 'react-app' })
 
 function App() {
@@ -10,7 +10,13 @@ function App() {
   const handleClick = () => {
     setCount((count) => count + 1);
     // emit a log record
-    logger.info('This is a test log message from index.js');
+    logger.info('info');
+    logger.warn('warn');
+    logger.error('error');
+    logger.fatal('fatal');
+    logger.trace('trace');
+    logger.debug('debug');
+    logger.notset('notset');
   };
 
   return (

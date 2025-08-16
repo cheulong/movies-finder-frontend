@@ -26,14 +26,18 @@ const severityTextLvl = {
 const scope = {
   FRONT_END: "react-frontend",
   BACK_END: "node-backend",
-  API_SERVICE: 'api-service'
+  API_SERVICE: "api-service",
 };
 
 const getCaller = () => {
   const stack = callsites();
   const caller = stack[3];
-  return { code_file_path: caller.getFileName(), code_line_number: caller.getLineNumber(), code_function_name: caller.getFunctionName() };
-}
+  return {
+    code_file_path: caller.getFileName(),
+    code_line_number: caller.getLineNumber(),
+    code_function_name: caller.getFunctionName(),
+  };
+};
 
 const customLogger = ({
   serviceName = "index.js",
@@ -63,11 +67,11 @@ const customLogger = ({
 
   // You can also use global singleton
   logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
-  const logger = logsAPI.logs.getLogger(scope.FRONT_END, '0.0.1');
+  const logger = logsAPI.logs.getLogger(scope.FRONT_END, "0.0.1");
 
   const sendLog = ({ level = severityTextLvl.NOTSET, msg = null }) => {
     logger.emit({
-      severityNumber: logsAPI.SeverityNumber.INFO,
+      severityNumber: logsAPI.SeverityNumber[level],
       severityText: level,
       body: msg,
       attributes: { ...getCaller() },
@@ -75,11 +79,41 @@ const customLogger = ({
   };
 
   const info = (msg) => {
-    sendLog({level:severityTextLvl.INFO, msg});
+    sendLog({ level: severityTextLvl.INFO, msg });
+  };
+
+  const warn = (msg) => {
+    sendLog({ level: severityTextLvl.WARN, msg });
+  };
+
+  const error = (msg) => {
+    sendLog({ level: severityTextLvl.ERROR, msg });
+  };
+
+  const fatal = (msg) => {
+    sendLog({ level: severityTextLvl.FATAL, msg });
+  };
+
+  const trace = (msg) => {
+    sendLog({ level: severityTextLvl.TRACE, msg });
+  };
+
+  const debug = (msg) => {
+    sendLog({ level: severityTextLvl.DEBUG, msg });
+  };
+
+  const notset = (msg) => {
+    sendLog({ level: severityTextLvl.NOTSET, msg });
   };
 
   return {
     info,
+    warn,
+    error,
+    fatal,
+    trace,
+    debug,
+    notset,
   };
 };
 

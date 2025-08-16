@@ -14,7 +14,7 @@
     "playwright:ui": "playwright test --ui",
     "prepare": "husky",
     "lint-staged": "lint-staged",
-    "check-gitleaks": "gitleaks detect --source . --exit-code 1 --no-git --redact -r a.json",
+    "check-gitleaks": "gitleaks detect --source . --exit-code 1 --no-git --redact",
     "release": "release-it",
     "release:patch": "release-it patch",
     "release:minor": "release-it minor",
