@@ -1,10 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
+import "./App.css";
+import customLogger from "../opentelemetry";
+const logger=customLogger({ serviceName: 'react-app' })
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
+  const handleClick = () => {
+    setCount((count) => count + 1);
+    // emit a log record
+    logger.info('This is a test log message from index.js');
+  };
 
   return (
     <>
@@ -18,18 +25,14 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Branch change title
-        </p>
+        <button onClick={handleClick}>count is {count}</button>
+        <p>Branch change title</p>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
