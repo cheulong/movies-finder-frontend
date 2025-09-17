@@ -136,7 +136,7 @@ playwright_test:
     - linux-homelab-general-vm
   image: mcr.microsoft.com/playwright:v1.54.0-noble
   before_script:
-    - npx playwright install chrome
+    - npx playwright install --with-deps chromium
   script:
     - npm run playwright --reporter=html --output=playwright-report
   artifacts:
