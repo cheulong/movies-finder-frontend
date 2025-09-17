@@ -83,10 +83,14 @@ dependency_check:
     name: owasp/dependency-check:latest
     entrypoint: [""]
   stage: sast_scan
+  cache:
+    key: dependency-check-cache
+    paths:
+      - .dependency-check
   script:
     - mkdir -p dependency-check-report
     - ls
-    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --exclude "dev" --format "HTML" --out dependency-check-report --failOnCVSS 7 --data .dependency-check 
     - ls -R dependency-check-report
   artifacts:
     paths:
