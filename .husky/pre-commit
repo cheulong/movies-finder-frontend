@@ -1,2 +1,3 @@
 npm run lint-staged
+npm audit --audit-level=moderate
 npm run test
