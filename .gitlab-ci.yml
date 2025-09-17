@@ -456,8 +456,8 @@ slack_notify:
       echo "Sending Slack notification: $MESSAGE"
       curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "staging"'
-      needs: [deploy_staging]
+    # - if: '$CI_COMMIT_BRANCH == "staging"'
+    #   needs: [deploy_staging]
     - if: '$CI_COMMIT_BRANCH == "main"'
       needs: [deploy_prod]
     - when: always
