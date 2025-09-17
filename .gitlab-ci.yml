@@ -78,6 +78,21 @@ npm_audit:
   rules:
     - when: always
 
+dependency_check:
+  image:
+    name: owasp/dependency-check:latest
+    entrypoint: [""]
+  stage: sast_scan
+  script:
+    - mkdir -p dependency-check-report
+    - ls
+    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --format "HTML" --out dependency-check-report --failOnCVSS 7
+    - ls -R dependency-check-report
+  artifacts:
+    paths:
+      - dependency-check-report/
+    when: always
+
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
 sonarcloud-check:
