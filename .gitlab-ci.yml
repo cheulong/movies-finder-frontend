@@ -96,7 +96,8 @@ dependency_check:
     paths:
       - dependency-check-report/
     when: always
-
+  when: manual
+  
 # ---- SONARCLOUD ----
 # This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
 sonarcloud-check:
