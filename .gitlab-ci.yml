@@ -1,6 +1,14 @@
 stages:
+  - prepare
+  - sast_scan
+  - test
   - build
+  - security
   - dast_scan
+  - deploy
+  - update-deployment-manifest
+  - release
+  - slack_notify
   - clean_up
 
 image: node:23-bookworm-slim
@@ -16,6 +24,136 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
 
+# ---- PREPARE ----
+install_dependencies:
+  stage: prepare
+  # tags:
+#    - linux-homelab-general-vm
+  script:
+    - npm ci --ignore-scripts
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+  rules:
+    - when: always
+
+# ---- ESLINT ----
+eslint:
+  stage: sast_scan
+  # tags:
+#    - linux-homelab-general-vm
+  script:
+    - npm run lint
+  allow_failure: false
+  rules:
+    - when: always
+
+# ---- GITLEAKS SCAN ----
+gitleaks_scan:
+  stage: sast_scan
+  # tags:
+#    - linux-homelab-general-vm
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  script:
+    - gitleaks detect --source . --exit-code 1 --no-git --redact --report-path gitleaks-report.json
+  artifacts:
+    paths:
+      - gitleaks-report.json
+    when: always
+  allow_failure: false
+  rules:
+    - when: always
+
+# ---- DEPENDENCY AUDIT ----
+npm_audit:
+  stage: sast_scan
+  # tags:
+#    - linux-homelab-general-vm
+  script:
+    - npm audit --audit-level=moderate
+  allow_failure: false
+  rules:
+    - when: always
+
+dependency_check:
+  image:
+    name: owasp/dependency-check:latest
+    entrypoint: [""]
+  stage: sast_scan
+  cache:
+    key: dependency-check-cache
+    paths:
+      - .dependency-check
+  script:
+    - mkdir -p dependency-check-report
+    - ls
+    - /usr/share/dependency-check/bin/dependency-check.sh --project "my-project" --scan . --exclude "dev" --format "HTML" --out dependency-check-report --failOnCVSS 7 --data .dependency-check 
+    - ls -R dependency-check-report
+  artifacts:
+    paths:
+      - dependency-check-report/
+    when: always
+  when: manual
+  
+# ---- SONARCLOUD ----
+# This job runs the SonarCloud analysis. It requires the `SONAR_TOKEN` variable
+sonarcloud-check:
+  stage: sast_scan
+  # tags:
+#    - linux-homelab-general-vm
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - echo 'sonarqube'
+    - sonar-scanner
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+
+
+# ---- TEST ----
+unit_test:
+  stage: test
+  # tags:
+#    - linux-homelab-general-vm
+  script:
+    - npm run test
+  needs: [install_dependencies]
+  allow_failure: false
+  rules:
+    - when: always
+
+playwright_test:
+  stage: test
+  # tags:
+#    - linux-homelab-general-vm
+  image: mcr.microsoft.com/playwright:v1.54.0-noble
+  before_script:
+    # Check for the Playwright cache directory
+    - |
+      if [ -d "$HOME/.cache/ms-playwright/chromium" ]; then
+        echo "Playwright cache exists."
+      else
+        echo "Playwright cache does not exist. Installing Chromium..."
+        npx playwright install --with-deps chromium
+      fi
+  script:
+    - npm run playwright --reporter=html --output=playwright-report
+  artifacts:
+    when: always
+    paths:
+      - playwright-report/
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  allow_failure: false
+
 # ---- BUILD IMAGE ----
 build:
   stage: build
@@ -30,6 +168,72 @@ build:
     - docker push $DOCKER_IMAGE:$DOCKER_TAG
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
+
+# ---- TRIVY SCAN ----
+# This job runs the Trivy security scanner against the Docker image and filesystem.
+trivy_scan:
+  stage: security
+  # tags:
+#    - linux-homelab-general-vm
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL --output trivy-report.json $DOCKER_IMAGE:$DOCKER_TAG
+  needs: [build]
+  artifacts:
+    paths:
+      - trivy-report.json
+    when: always
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  allow_failure: false
+
+# ---- SYFT SBOM ----
+# This job generates a Software Bill of Materials (SBOM) using Syft.
+syft_sbom:
+  stage: security
+  # tags:
+#    - linux-homelab-general-vm
+  image:
+    name: docker:latest
+  services:
+    - name: docker:dind
+      alias: docker
+  before_script:
+    # Login to GitLab Container Registry to pull the image
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+    - apk add --no-cache curl bash
+    - curl -sSfL https://get.anchore.io/syft | sh -s -- -b /usr/local/bin
+  script:
+    - syft --version
+    - syft $DOCKER_IMAGE:$DOCKER_TAG -o spdx-json > sbom.spdx.json
+  needs: [build]
+  artifacts:
+    paths:
+      - sbom.spdx.json
+    when: always
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+# ---- GRYPE SCAN ----
+# This job runs the Grype vulnerability scanner against the SBOM generated by Syft.
+grype_scan:
+  stage: security
+  # tags:
+#    - linux-homelab-general-vm
+  image:
+    name: alpine:latest
+  before_script:
+    - apk add --no-cache curl bash
+    - curl -sSfL https://get.anchore.io/grype | sh -s -- -b /usr/local/bin
+  script:
+    - grype sbom:sbom.spdx.json --fail-on high
+  needs: [syft_sbom]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  allow_failure: false
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
@@ -55,17 +259,7 @@ run_app:
     # - curl -f http://localhost:80 || exit 1
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-curl:
-  stage: dast_scan
-  image: curlimages/curl:latest
-  services:
-    - name: $DOCKER_IMAGE:$DOCKER_TAG
-      alias: app
-  script:
-    - curl http://app:80
-  needs: [run_app]
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
+
 # ---- OWASP ZAP ----
 # This job runs the OWASP ZAP security scanner against the application.
 owap_zap:
@@ -93,6 +287,210 @@ owap_zap:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
   allow_failure: true
+
+# ---- PUSH IMAGE ----
+push_image:
+  stage: deploy
+  # tags:
+#    - linux-homelab-general-vm
+  image: docker:latest
+  services:
+    - name: docker:dind
+      alias: docker
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+    - docker pull $DOCKER_IMAGE:$DOCKER_TAG
+    - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_NAME:$DOCKER_TAG
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push $DOCKER_NAME:$DOCKER_TAG
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+# ---- UPDATE MANIFEST REPO ----
+deploy_dev:
+  stage: deploy
+  # tags:
+#    - linux-homelab-general-vm
+  image: alpine:latest
+  variables:
+    DEPLOY_ENV: development
+  needs: [push_image]
+  before_script:
+    - apk add --no-cache git bash
+  script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "GitLab CI"
+    - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+    - cd movies-finder-deployment/web-app
+    - 'sed -i "s|tag:.*|tag: $CI_COMMIT_SHORT_SHA|" values.dev.yaml'
+    - echo "Checking for changes..."
+    - |
+      if git diff --quiet; then
+        echo "No changes to commit."
+      else
+        git add .
+        git commit -m "ci: Update development deployment image tag to $CI_COMMIT_SHORT_SHA"
+        git push https://oauth2:$GITLAB_DEPLOYMENT_WRITE_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
+      fi
+  after_script:
+    - echo "development" > deploy_env.txt
+  artifacts:
+    paths:
+      - deploy_env.txt
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+  environment:
+    name: development
+
+# deploy_staging:
+#   stage: deploy
+#   tags:
+#     - linux-homelab-general-vm
+#   image: alpine:latest
+#   variables:
+#     DEPLOY_ENV: staging
+#   before_script:
+#     - apk add --no-cache git bash
+#   script:
+#     - git config --global user.email "ci@example.com"
+#     - git config --global user.name "GitLab CI"
+#     - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+#     - cd movies-finder-deployment/web-app
+#     - "IMAGE_TAG=$(grep 'tag:' values.dev.yaml | head -1 | sed 's/tag: //')"
+#     - 'sed -i "s|tag:.*|tag: $IMAGE_TAG|" values.staging.yaml'
+#     - echo "Checking for changes..."
+#     - |
+#       if git diff --quiet; then
+#         echo "No changes to commit."
+#       else
+#         git add .
+#         git commit -m "ci: Update staging deployment image tag to $IMAGE_TAG"
+#         git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
+#       fi
+#   after_script:
+#     - echo "staging" > deploy_env.txt
+#   artifacts:
+#     paths:
+#       - deploy_env.txt
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "staging"'
+#   when: manual
+#   environment:
+#     name: staging
+
+deploy_prod:
+  stage: deploy
+  # tags:
+#    - linux-homelab-general-vm
+  image: alpine:latest
+  variables:
+    DEPLOY_ENV: production
+  before_script:
+    - apk add --no-cache git bash
+  script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "GitLab CI"
+    - git clone https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git
+    - cd movies-finder-deployment/web-app
+    - "IMAGE_TAG=$(grep 'tag:' values.dev.yaml | head -1 | sed 's/tag: //')"
+    - 'sed -i "s|tag:.*|tag: $IMAGE_TAG|" values.prod.yaml'
+    - echo "Checking for changes..."
+    - |
+      if git diff --quiet; then
+        echo "No changes to commit."
+      else
+        git add .
+        git commit -m "ci: Update production deployment image tag to $IMAGE_TAG"
+        git push https://oauth2:$GITLAB_PAT@gitlab.com/cheulong-devops/movies-finder/movies-finder-deployment.git HEAD:main
+      fi
+    - echo $IMAGE_TAG > image_tag.txt
+  after_script:
+    - echo "production" > deploy_env.txt
+  artifacts:
+    paths:
+      - movies-finder-deployment/web-app/image_tag.txt
+      - deploy_env.txt
+  when: manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  environment:
+    name: production
+
+# ---- UPDATE CHANGELOG ----
+update_changelog:
+  stage: release
+  # tags:
+#    - linux-homelab-general-vm
+  needs: [deploy_prod]
+  variables:
+    GITLAB_TOKEN: $RELEASE_IT
+  before_script:
+    - apt-get update && apt-get install -y git
+    - git config --global user.email "ci-bot@gitlab.com"
+    - git config --global user.name "GitLab CI"
+    - git remote set-url origin https://oauth2:${GITLAB_PAT}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
+    - git fetch --all --tags
+    - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
+  script:
+    - npx release-it --ci 
+  after_script:
+    - echo $(git tag --sort=-v:refname | head -n1) > version.txt
+  artifacts:
+    paths:
+      - version.txt
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+push_release_image:
+  stage: release
+  # tags:
+#    - linux-homelab-general-vm
+  image: docker:latest
+  services:
+    - name: docker:dind
+  needs: [update_changelog, deploy_prod]
+
+  script:
+    - IMAGE_TAG=$(cat movies-finder-deployment/web-app/image_tag.txt)
+    - VERSION=$(cat version.txt)
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker pull $DOCKER_NAME:$IMAGE_TAG
+    - docker tag $DOCKER_NAME:$IMAGE_TAG $DOCKER_NAME:$VERSION
+    - docker push $DOCKER_NAME:$VERSION
+    - echo "Release process completed successfully."
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# ---- SLACK NOTIFY ----
+slack_notify:
+  stage: slack_notify
+  # tags:
+#    - linux-homelab-general-vm
+  image:
+    name: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - DEPLOY_ENV=$(cat deploy_env.txt) || true
+    - |
+      if [ "$DEPLOY_ENV" = "staging" ]; then
+        MESSAGE="✅🚀 Deployed to *STAGING* – $CI_COMMIT_SHORT_SHA"
+      elif [ "$DEPLOY_ENV" = "production" ]; then
+        MESSAGE="✅🔥 Deployed to *PRODUCTION* – $CI_COMMIT_SHORT_SHA"
+      elif [ "$DEPLOY_ENV" = "development" ]; then
+        MESSAGE="✅🛠️ Deployed to *DEVELOPMENT* – $CI_COMMIT_SHORT_SHA"
+      else
+        MESSAGE="✅ Pipeline complete – $CI_COMMIT_SHORT_SHA"
+      fi
+
+      echo "Sending Slack notification: $MESSAGE"
+      curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK"
+  rules:
+    # - if: '$CI_COMMIT_BRANCH == "staging"'
+    #   needs: [deploy_staging]
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      needs: [deploy_prod]
+    - when: always
 
 # --- Clean up ---
 clean_up:
