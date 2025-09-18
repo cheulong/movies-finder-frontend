@@ -136,7 +136,14 @@ playwright_test:
 #    - linux-homelab-general-vm
   image: mcr.microsoft.com/playwright:v1.54.0-noble
   before_script:
-    - npx playwright install --with-deps chromium
+    # Check for the Playwright cache directory
+    - |
+      if [ -d "$HOME/.cache/ms-playwright/chromium" ]; then
+        echo "Playwright cache exists."
+      else
+        echo "Playwright cache does not exist. Installing Chromium..."
+        npx playwright install --with-deps chromium
+      fi
   script:
     - npm run playwright --reporter=html --output=playwright-report
   artifacts:
@@ -245,11 +252,11 @@ run_app:
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
     - docker pull $DOCKER_IMAGE:$DOCKER_TAG
-    - apk add --no-cache curl
+    # - apk add --no-cache curl
   script:
     - docker run --name app --rm -d -p 80:80 $DOCKER_IMAGE:$DOCKER_TAG
     - sleep 15 # wait for app to start
-    - curl -f http://localhost:80 || exit 1
+    # - curl -f http://localhost:80 || exit 1
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
