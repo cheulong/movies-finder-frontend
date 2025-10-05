@@ -1,3 +1,39 @@
+#!/bin/bash
+# Run gitleaks only on staged files before commit
+
+echo "🔍 Running Gitleaks on staged files..."
+
+# Get a list of staged files (not deleted)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+# If no staged files, exit
+if [ -z "$STAGED_FILES" ]; then
+  echo "No staged files to scan."
+  exit 0
+fi
+
+# Run gitleaks on each staged file using the staged content (not the working tree)
+EXIT_CODE=0
+for file in $STAGED_FILES; do
+  # Only scan files that actually exist (ignore deletions)
+  if [ -f "$file" ]; then
+    # Extract staged content and feed to gitleaks
+    git show ":$file" | gitleaks detect --no-banner --source . --redact --verbose
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+      echo "❌ Potential secrets detected in: $file"
+      EXIT_CODE=1
+    fi
+  fi
+done
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo "🚫 Commit aborted: gitleaks found issues."
+  exit 1
+else
+  echo "✅ No leaks found in staged files."
+fi
+
 npm run lint-staged
 npm audit --audit-level=moderate
 npm run test
