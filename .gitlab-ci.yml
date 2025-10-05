@@ -52,13 +52,14 @@ eslint:
 # ---- GITLEAKS SCAN ----
 gitleaks_scan:
   stage: sast_scan
+  needs: [install_dependencies]
   # tags:
 #    - linux-homelab-general-vm
   image:
     name: zricethezav/gitleaks:latest
     entrypoint: [""]
   script:
-    - gitleaks detect --source . --exit-code 1 --no-git --redact --report-path gitleaks-report.json
+    - gitleaks detect --source . --exit-code 1 --no-banner --redact --report-path gitleaks-report.json
   artifacts:
     paths:
       - gitleaks-report.json
@@ -70,6 +71,7 @@ gitleaks_scan:
 # ---- DEPENDENCY AUDIT ----
 npm_audit:
   stage: sast_scan
+  needs: [install_dependencies]
   # tags:
 #    - linux-homelab-general-vm
   script:
@@ -83,6 +85,7 @@ dependency_check:
     name: owasp/dependency-check:latest
     entrypoint: [""]
   stage: sast_scan
+  needs: [install_dependencies]
   cache:
     key: dependency-check-cache
     paths:
@@ -111,6 +114,7 @@ sonarcloud-check:
     key: "${CI_JOB_NAME}"
     paths:
       - .sonar/cache
+  needs: [install_dependencies]
   script:
     - echo 'sonarqube'
     - sonar-scanner
