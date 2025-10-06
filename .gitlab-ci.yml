@@ -75,7 +75,7 @@ npm_audit:
   tags:
    - linux-homelab-general-vm
   script:
-    - npm audit --audit-level=moderate
+    - npm audit --audit-level=high
   allow_failure: false
   rules:
     - when: always
