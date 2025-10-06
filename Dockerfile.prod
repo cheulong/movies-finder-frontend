@@ -12,6 +12,10 @@ RUN npm run build
 
 # Production Stage
 FROM nginx:stable-alpine3.21-slim AS production
+
+# Patch OpenSSL (fixes CVE-2025-9230)
+RUN apk update && apk upgrade --no-cache libcrypto3 libssl3 openssl
+
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
