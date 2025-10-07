@@ -61,7 +61,8 @@
     "vitest": "^3.2.4"
   },
   "overrides": {
-    "conventional-changelog-conventionalcommits": "8.0.0"
+    "conventional-changelog-conventionalcommits": "8.0.0",
+    "@conventional-changelog/git-client": "^2.0.0"
   },
   "config": {
     "commitizen": {
