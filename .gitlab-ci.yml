@@ -80,7 +80,7 @@ npm_audit:
   tags:
     - linux-homelab-general-vm
   script:
-    - npm audit --audit-level=high
+    - npm audit --audit-level=moderate
   allow_failure: false
   rules:
     - when: always
