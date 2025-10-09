@@ -5,7 +5,7 @@ import MovieCard from "./components/MovieCard";
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
 
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const API_KEY = window.__ENV__?.VITE_TMDB_API_KEY || import.meta.env.VITE_TMDB_API_KEY;
 
 const API_OPTIONS = {
   method: "GET",
@@ -38,7 +38,6 @@ function App() {
         setErrorMessage("No movies found.");
         setMovieList([]);
       }
-      console.log(data);
     } catch (error) {
       console.error("Error fetching movies:", error);
       setErrorMessage("Failed to fetch movies. Please try again later.");
