@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.24.2](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.24.1...0.24.2) (2025-10-09)
+
+### Bug Fixes
+
+* add env injection to container ([5cddd51](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/commit/5cddd518c424febd600382b6782d9df46eaf9afe))
+
 ## [0.24.1](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.24.0...0.24.1) (2025-10-09)
 
 ### Bug Fixes
