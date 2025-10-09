@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.24.0](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.23.0...0.24.0) (2025-10-07)
+
+### Features
+
+* add  movie card ui ([235fe81](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/commit/235fe81baa36a0feabf890565707b6e1498c2bb2))
+
+### Bug Fixes
+
+* patch @conventional-changelog/git-client to ^2.0.0 ([a2c4064](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/commit/a2c406424f03530798653fd720f5f1d642758a3d))
+
 ## [0.23.0](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.1.17...0.23.0) (2025-10-06)
 
 ### Features
