@@ -5,7 +5,7 @@ import MovieCard from "./components/MovieCard";
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
 
-const API_KEY = window.__ENV__?.VITE_TMDB_API_KEY || import.meta.env.VITE_TMDB_API_KEY;
+const API_KEY = window.__ENV__?.VITE_TMDB_API_KEY !== '$VITE_TMDB_API_KEY' ? window.__ENV__?.VITE_TMDB_API_KEY : import.meta.env.VITE_TMDB_API_KEY;
 
 const API_OPTIONS = {
   method: "GET",
@@ -21,12 +21,12 @@ function App() {
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchMovies = async () => {
+  const fetchMovies = async (query = '') => {
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const endpoint = query ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}` : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
       const res = await fetch(endpoint, API_OPTIONS);
       if (!res.ok) {
         throw new Error("Failed to fetch movies");
@@ -46,8 +46,8 @@ function App() {
     }
   };
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    fetchMovies(searchTerm);
+  }, [searchTerm]);
 
   return (
     <main>
