@@ -1,7 +1,7 @@
 {
   "name": "movies-finder-frontend",
   "private": true,
-  "version": "0.24.1",
+  "version": "0.24.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -31,10 +31,11 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
+    "@vitejs/plugin-react": "^5.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-use": "^17.6.0",
     "tailwindcss": "^4.1.13",
-    "@vitejs/plugin-react": "^5.0.0",
     "vite": "^7.1.2"
   },
   "devDependencies": {
