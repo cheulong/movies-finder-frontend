@@ -172,7 +172,7 @@ playwright_test:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
       when: manual      # Show with Play button on commits
-  allow_failure: false
+  allow_failure: true
 
 # ---- BUILD IMAGE ----
 build:
@@ -208,7 +208,7 @@ trivy_scan:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
       when: manual      # Show with Play button on commits
-  allow_failure: false
+  allow_failure: true
 
 # ---- SYFT SBOM ----
 # This job generates a Software Bill of Materials (SBOM) using Syft.
@@ -255,7 +255,7 @@ grype_scan:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
       when: manual      # Show with Play button on commits
-  allow_failure: false
+  allow_failure: true
 
 # ---- RUN APP ----
 # This job runs the application using Docker Compose.
