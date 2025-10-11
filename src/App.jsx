@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Search from "./components/Search";
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
-import { useDebounce } from "react-use";
+// import { useDebounce } from "react-use";
 const API_BASE_URL = "https://api.themoviedb.org/3";
 
 const API_KEY =
@@ -25,13 +25,25 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  useDebounce(
-    () => {
+  // useDebounce(
+  //   () => {
+  //     setDebouncedSearchTerm(searchTerm);
+  //   },
+  //   500,
+  //   [searchTerm]
+  // );
+
+  const onSearch = () => {
+    fetchMovies(searchTerm);
+    setDebouncedSearchTerm(searchTerm);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      fetchMovies(searchTerm);
       setDebouncedSearchTerm(searchTerm);
-    },
-    500,
-    [searchTerm]
-  );
+    }
+  };
 
   const fetchMovies = async (query = "") => {
     setIsLoading(true);
@@ -60,8 +72,8 @@ function App() {
     }
   };
   useEffect(() => {
-    fetchMovies(debouncedSearchTerm);
-  }, [debouncedSearchTerm]);
+    fetchMovies();
+  }, []);
 
   return (
     <main>
@@ -72,10 +84,19 @@ function App() {
             You'll Enjoy the <span className="text-gradient">Movies</span>
             <br /> You find
           </h1>
-          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          <Search
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onSearch={onSearch}
+            handleKeyDown={handleKeyDown}
+          />
         </header>
         <section className="all-movies">
-          <h2 className="mt-[40px]">{debouncedSearchTerm ? `Search for ${debouncedSearchTerm}` : 'All Movies'}</h2>
+          <h2 className="mt-[40px]">
+            {debouncedSearchTerm
+              ? `Search for ${debouncedSearchTerm}`
+              : "All Movies"}
+          </h2>
 
           {isLoading ? (
             <Spinner />
