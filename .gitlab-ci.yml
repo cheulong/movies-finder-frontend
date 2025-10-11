@@ -11,13 +11,10 @@ stages:
   - slack_notify
   - clean_up
 
-.default_template:
-  except:
-    - tags
-
 image: node:23-bookworm-slim
 
 cache:
+  key: ${CI_COMMIT_REF_SLUG}
   paths:
     - node_modules/
 
@@ -154,8 +151,8 @@ unit_test:
 
 playwright_test:
   stage: test
-  # tags:
-  #    - linux-homelab-general-vm
+  tags:
+    - linux-homelab-general-vm
   image: mcr.microsoft.com/playwright:v1.54.0-noble
   before_script:
     # Check for the Playwright cache directory
@@ -174,6 +171,7 @@ playwright_test:
       - playwright-report/
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: manual      # Show with Play button on commits
   allow_failure: false
 
 # ---- BUILD IMAGE ----
@@ -209,6 +207,7 @@ trivy_scan:
     when: always
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: manual      # Show with Play button on commits
   allow_failure: false
 
 # ---- SYFT SBOM ----
@@ -255,6 +254,7 @@ grype_scan:
   needs: [syft_sbom]
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: manual      # Show with Play button on commits
   allow_failure: false
 
 # ---- RUN APP ----
@@ -308,6 +308,7 @@ owap_zap:
       - zap-report.html
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: manual      # Show with Play button on commits
   allow_failure: true
 
 # ---- PUSH IMAGE ----
