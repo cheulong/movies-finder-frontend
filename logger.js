@@ -54,7 +54,7 @@ const customLogger = ({
 
   // exporter options. see all options in OTLPExporterConfigBase
   const collectorOptions = {
-    url: "http://localhost:4318/v1/logs", // Alloy OTLP HTTP endpoint
+    url: "http://alloy.alloy.svc.cluster.local:4318/v1/logs", // Alloy OTLP HTTP endpoint
     concurrencyLimit: 1, // an optional limit on pending requests
   };
 
