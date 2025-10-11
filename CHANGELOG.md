@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.26.0](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.25.0...0.26.0) (2025-10-11)
+
+### Features
+
+* **search.jsx:** add search button ([477dfcf](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/commit/477dfcf94e3c8be484063480c1aaefe55ab5fe35))
+
 ## [0.25.0](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.24.2...0.25.0) (2025-10-11)
 
 ### Features
