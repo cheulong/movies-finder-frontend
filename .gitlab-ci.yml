@@ -171,7 +171,7 @@ playwright_test:
       - playwright-report/
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-    - when: manual      # Show with Play button on commits
+      when: manual      # Show with Play button on commits
   allow_failure: false
 
 # ---- BUILD IMAGE ----
@@ -207,7 +207,7 @@ trivy_scan:
     when: always
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-    - when: manual      # Show with Play button on commits
+      when: manual      # Show with Play button on commits
   allow_failure: false
 
 # ---- SYFT SBOM ----
@@ -254,7 +254,7 @@ grype_scan:
   needs: [syft_sbom]
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-    - when: manual      # Show with Play button on commits
+      when: manual      # Show with Play button on commits
   allow_failure: false
 
 # ---- RUN APP ----
@@ -308,7 +308,7 @@ owap_zap:
       - zap-report.html
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-    - when: manual      # Show with Play button on commits
+      when: manual      # Show with Play button on commits
   allow_failure: true
 
 # ---- PUSH IMAGE ----
