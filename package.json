@@ -1,7 +1,7 @@
 {
   "name": "movies-finder-frontend",
   "private": true,
-  "version": "0.25.0",
+  "version": "0.26.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -30,8 +30,14 @@
     ]
   },
   "dependencies": {
+    "@opentelemetry/api-logs": "^0.206.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.206.0",
+    "@opentelemetry/resources": "^2.1.0",
+    "@opentelemetry/sdk-logs": "^0.206.0",
+    "@opentelemetry/semantic-conventions": "^1.37.0",
     "@tailwindcss/vite": "^4.1.13",
     "@vitejs/plugin-react": "^5.0.0",
+    "callsites": "^4.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-use": "^17.6.0",

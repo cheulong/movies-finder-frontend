@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import Search from "./components/Search";
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
+import customLogger from "../logger";
+const logger = customLogger({ serviceName: "react-app" });
+
 // import { useDebounce } from "react-use";
 const API_BASE_URL = "https://api.themoviedb.org/3";
 
@@ -48,6 +51,7 @@ function App() {
   const fetchMovies = async (query = "") => {
     setIsLoading(true);
     setErrorMessage("");
+    logger.info(query);
 
     try {
       const endpoint = query
@@ -55,6 +59,7 @@ function App() {
         : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
       const res = await fetch(endpoint, API_OPTIONS);
       if (!res.ok) {
+        logger.error("Failed to fetch movies");
         throw new Error("Failed to fetch movies");
       }
       const data = await res.json();
@@ -65,6 +70,7 @@ function App() {
         setMovieList([]);
       }
     } catch (error) {
+      logger.error(error);
       console.error("Error fetching movies:", error);
       setErrorMessage("Failed to fetch movies. Please try again later.");
     } finally {
