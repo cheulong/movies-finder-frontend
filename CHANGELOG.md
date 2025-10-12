@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.26.1](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.26.0...0.26.1) (2025-10-12)
+
 ## [0.26.0](https://gitlab.com/cheulong-devops/movies-finder/movies-finder-frontend/compare/0.25.0...0.26.0) (2025-10-11)
 
 ### Features
